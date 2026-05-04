@@ -44,6 +44,10 @@ class NvidiaService:
             elif "```" in content:
                 content = content.split("```")[1].split("```")[0].strip()
             
+            import re
+            # Fix trailing commas which cause 'Expecting property name enclosed in double quotes'
+            content = re.sub(r',\s*([\}\]])', r'\1', content)
+            
             try:
                 return json.loads(content)
             except json.JSONDecodeError:
