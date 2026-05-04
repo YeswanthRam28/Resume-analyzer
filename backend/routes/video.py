@@ -18,7 +18,8 @@ async def analyze_video(
     db: Session = Depends(get_session)
 ):
     # 1. Save file temporarily
-    temp_dir = "temp_videos"
+    # Use /tmp for Vercel compatibility (read-only filesystem outside /tmp)
+    temp_dir = "/tmp/temp_videos"
     os.makedirs(temp_dir, exist_ok=True)
     file_path = os.path.join(temp_dir, f"{uuid.uuid4()}_{file.filename}")
     
