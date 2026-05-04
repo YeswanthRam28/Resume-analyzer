@@ -51,14 +51,26 @@ class NvidiaService:
             try:
                 return json.loads(content)
             except json.JSONDecodeError:
-                # Fallback: Find the first { and last }
-                import re
+                print("JSONDecodeError encountered. Attempting to repair JSON...")
+                try:
+                    import json_repair
+                    repaired = json_repair.repair_json(content, return_objects=True)
+                    if isinstance(repaired, dict):
+                        return repaired
+                except ImportError:
+                    print("json-repair library not installed. Falling back to regex extraction.")
+                
+                # Ultimate Fallback: Find the first { and last }
                 match = re.search(r'(\{.*\})', content, re.DOTALL)
                 if match:
                     try:
-                        return json.loads(match.group(1))
+                        import json_repair
+                        return json_repair.repair_json(match.group(1), return_objects=True)
                     except:
-                        pass
+                        try:
+                            return json.loads(match.group(1))
+                        except:
+                            pass
                 raise
         except Exception as e:
             print(f"Error in NvidiaService: {e}")
