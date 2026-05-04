@@ -1,0 +1,31 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from database import init_db
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize database on startup
+    init_db() 
+    yield
+
+app = FastAPI(title="RÉSCORE API", lifespan=lifespan)
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Adjust in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/")
+async def root():
+    return {"message": "RÉSCORE API is running"}
+
+# Include routers
+from routes import resume, video, history
+app.include_router(resume.router, prefix="/api/resume", tags=["resume"])
+app.include_router(video.router, prefix="/api/video", tags=["video"])
+app.include_router(history.router, prefix="/api/history", tags=["history"])

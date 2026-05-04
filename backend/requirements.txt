@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+sqlmodel
+psycopg2-binary
+httpx
+google-genai
+openai
+python-multipart
+pdfminer.six
+mammoth
+python-dotenv
