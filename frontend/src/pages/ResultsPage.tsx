@@ -4,7 +4,7 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BarChart3, Flame, User, ShieldCheck, Map, Trophy, Github, 
-  ArrowLeft, Download, ExternalLink, ChevronRight, Video
+  ArrowLeft, Download, ExternalLink, ChevronRight, Video, Wand2, Sparkles
 } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { cn } from '../lib/utils';
@@ -99,6 +99,19 @@ export default function ResultsPage() {
               {activeSection === s.id && <motion.div layoutId="sidebar-active" className="ml-auto w-1 h-4 bg-brand-primary rounded-full" />}
             </button>
           ))}
+
+          <div className="pt-8 mt-8 border-t border-brand-divider">
+            <h4 className="text-[10px] font-mono uppercase tracking-widest text-brand-ghost mb-4">Post-Analysis</h4>
+            <Link 
+              to={`/tailor/${sessionId}`}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-sans text-brand-primary hover:bg-brand-primary/5 border border-brand-primary/20 bg-brand-primary/5 transition-all group overflow-hidden relative"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-brand-primary/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+              <Wand2 size={18} className="relative z-10" />
+              <span className="relative z-10">AI Redemption</span>
+              <Sparkles size={12} className="ml-auto relative z-10 animate-pulse" />
+            </Link>
+          </div>
         </nav>
 
         <div className="mt-auto pt-6 border-t border-brand-divider">
@@ -160,7 +173,7 @@ export default function ResultsPage() {
         {analysis.roast && (
           <section id="roast" className="scroll-mt-24">
             <h2 className="font-display text-5xl mb-12 text-brand-tertiary">BRUTAL FEEDBACK</h2>
-            <RoastPanel data={analysis.roast} />
+            <RoastPanel data={analysis.roast} fullAnalysis={analysis} resumeText={data.resume_text} />
           </section>
         )}
 
@@ -199,7 +212,7 @@ export default function ResultsPage() {
         {/* GitHub Section */}
         <section id="github" className="scroll-mt-24">
           <h2 className="font-display text-5xl mb-12">GITHUB SYNC</h2>
-          <GitHubSyncPanel data={analysis.github || {
+          <GitHubSyncPanel data={analysis.github_portfolio || {
             on_resume: [],
             missing_from_resume: [],
             contradictions: [],

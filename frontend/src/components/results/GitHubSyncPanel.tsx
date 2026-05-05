@@ -31,10 +31,6 @@ interface GitHubSyncPanelProps {
 
 export default function GitHubSyncPanel({ data }: GitHubSyncPanelProps) {
   const safeData = {
-    username: data?.username || "Unknown",
-    total_stars: data?.total_stars || 0,
-    repos: Array.isArray(data?.repos) ? data.repos : [],
-    contribution_summary: data?.contribution_summary || "No sync data.",
     on_resume: Array.isArray(data?.on_resume) ? data.on_resume : [],
     missing_from_resume: Array.isArray(data?.missing_from_resume) ? data.missing_from_resume : [],
     contradictions: Array.isArray(data?.contradictions) ? data.contradictions : [],
@@ -63,8 +59,8 @@ export default function GitHubSyncPanel({ data }: GitHubSyncPanelProps) {
                   const active = Math.random() > 0.6;
                   const opacity = active ? (Math.random() * 0.8 + 0.2) : 0.05;
                   return (
-                    <div 
-                      key={j} 
+                    <div
+                      key={j}
                       className={cn("w-2.5 h-2.5 rounded-sm", active ? "bg-brand-primary" : "bg-brand-divider")}
                       style={{ opacity }}
                     />
@@ -131,7 +127,7 @@ export default function GitHubSyncPanel({ data }: GitHubSyncPanelProps) {
               </div>
             ))}
 
-            {data.contradictions.length > 0 && (
+            {safeData.contradictions.length > 0 && (
               <div className="p-5 bg-brand-tertiary/10 border border-brand-tertiary/20 rounded-lg mt-6">
                 <div className="flex items-center gap-2 mb-3">
                   <AlertCircle size={14} className="text-brand-tertiary" />

@@ -319,12 +319,69 @@ Return a JSON object with this exact structure:
     "overall_project_score": <0-100>,
     "top_project": "name of strongest project",
     "biggest_project_sin": "worst project presentation issue"
+  }},
+  "github_portfolio": {{
+    "github_strength_summary": "one sentence summarizing their GitHub impact",
+    "on_resume": [
+      {{
+        "repo": "name",
+        "description_score": <0-10>,
+        "improvement": "how to better describe this on their resume",
+        "stars": <int>,
+        "forks": <int>,
+        "language": "string"
+      }}
+    ],
+    "missing_from_resume": [
+      {{
+        "repo": "name",
+        "suggested_bullet": "bullet point to add to resume",
+        "why_include": "reason this repo is worth listing",
+        "stars": <int>,
+        "forks": <int>,
+        "language": "string"
+      }}
+    ],
+    "contradictions": ["list of inconsistencies between resume and GitHub data"]
   }}
 }}
 
 Job Description (if available):
 {jd_text}
 
+GitHub Repository Data (if provided):
+{github_data}
+
 Resume:
 {resume_text}
+"""
+
+TAILOR_PROMPT = """
+You are a world-class resume writer and career coach. Your task is to rewrite a resume to fix specific issues identified in a roast/analysis and, optionally, to align it with a target job description.
+
+Input:
+1. Original Resume Text:
+{resume_text}
+
+2. Roast & Analysis Feedback:
+{analysis_feedback}
+
+3. Target Job Description (if any):
+{jd_text}
+
+Goal:
+- Fix every single "Red Flag" identified in the analysis.
+- Rewrite weak bullets using the X-Y-Z formula (Accomplished [X] as measured by [Y], by doing [Z]).
+- Remove fluff and filler words identified in the "Emotion Persona" analysis.
+- If a JD is provided, incorporate key missing keywords strategically.
+- Maintain a professional, high-impact tone.
+
+Output Format:
+Return a JSON object:
+{{
+  "tailored_resume_markdown": "The full rewritten resume in clean Markdown format",
+  "changes_made": ["list of major improvements made"],
+  "ats_prediction": <estimated 0-100 score for this new version>,
+  "explanation": "short summary of the tailoring strategy used"
+}}
 """

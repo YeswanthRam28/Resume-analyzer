@@ -4,6 +4,7 @@ import AnalyzePage from './pages/AnalyzePage';
 import ResultsPage from './pages/ResultsPage';
 import VideoPage from './pages/VideoPage';
 import DashboardPage from './pages/DashboardPage';
+import TailorPage from './pages/TailorPage';
 
 export const router = createBrowserRouter([
   {
@@ -17,6 +18,10 @@ export const router = createBrowserRouter([
   {
     path: '/results/:sessionId',
     element: <ResultsPage />,
+  },
+  {
+    path: '/tailor/:sessionId',
+    element: <TailorPage />,
   },
   {
     path: '/video',

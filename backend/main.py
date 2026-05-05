@@ -30,7 +30,8 @@ async def root():
     return {"message": "RÉSCORE API is running"}
 
 # Include routers
-from routes import resume, video, history
+from routes import resume, video, history, tailor
 app.include_router(resume.router, prefix="/api/resume", tags=["resume"])
 app.include_router(video.router, prefix="/api/video", tags=["video"])
 app.include_router(history.router, prefix="/api/history", tags=["history"])
+app.include_router(tailor.router, prefix="/api/tailor", tags=["tailor"])

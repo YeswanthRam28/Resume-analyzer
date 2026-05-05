@@ -13,14 +13,14 @@ class GeminiService:
             api_key = "AIza-no-key-provided"
         
         self.client = genai.Client(api_key=api_key)
-        self.model_id = 'gemini-2.0-flash'
+        # Using 1.5-flash because the logs show 2.0-flash has a 'limit: 0' in the user's region
+        self.model_id = 'gemini-2.5-flash'
 
     async def analyze_video(self, video_path: str, prompt: str) -> dict:
         try:
             # 1. Upload the file
-            # In the new SDK, files are uploaded via client.files.upload
-            with open(video_path, 'rb') as f:
-                video_file = self.client.files.upload(file=f)
+            # Pass the file path directly so the SDK can infer the mime type from the extension
+            video_file = self.client.files.upload(file=video_path)
 
             # 2. Wait for processing
             while video_file.state == "PROCESSING":
@@ -41,13 +41,26 @@ class GeminiService:
             try:
                 return json.loads(content)
             except json.JSONDecodeError:
+                print("JSONDecodeError in Gemini video analysis. Attempting repair...")
+                try:
+                    import json_repair
+                    repaired = json_repair.repair_json(content, return_objects=True)
+                    if isinstance(repaired, dict):
+                        return repaired
+                except:
+                    pass
+                
                 import re
                 match = re.search(r'(\{.*\})', content, re.DOTALL)
                 if match:
                     try:
-                        return json.loads(match.group(1))
+                        import json_repair
+                        return json_repair.repair_json(match.group(1), return_objects=True)
                     except:
-                        pass
+                        try:
+                            return json.loads(match.group(1))
+                        except:
+                            pass
                 raise
         except Exception as e:
             print(f"Error in GeminiService: {e}")

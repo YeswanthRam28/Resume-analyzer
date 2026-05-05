@@ -4,12 +4,14 @@ from database import get_session
 from models import ResumeSession, GitHubRepo
 from services.parser_service import ParserService
 from services.nvidia_service import NvidiaService
+from services.github_service import GitHubService
 from prompts.templates import MASTER_RESUME_PROMPT
 import asyncio
 import uuid
 
 router = APIRouter()
 nvidia = NvidiaService()
+github_service = GitHubService()
 
 @router.post("/analyze")
 async def analyze_resume(
@@ -44,8 +46,24 @@ async def analyze_resume(
     # We close the DB session during the long AI call to avoid SSL idle timeout
     db.close() 
 
+    # Fetch GitHub data if username provided
+    github_repos = []
+    if github_username:
+        github_repos = await github_service.get_user_repos(github_username)
+    
+    github_data_str = "No GitHub data provided."
+    if github_repos:
+        github_data_str = "\n".join([
+            f"- {r['name']}: {r['description']} ({r['language']}, {r['stars']} stars)"
+            for r in github_repos
+        ])
+
     try:
-        master_prompt = MASTER_RESUME_PROMPT.format(resume_text=resume_text, jd_text=jd_text or "Not provided.")
+        master_prompt = MASTER_RESUME_PROMPT.format(
+            resume_text=resume_text, 
+            jd_text=jd_text or "Not provided.",
+            github_data=github_data_str
+        )
         analysis_result = await nvidia.run_prompt(master_prompt, "Run Master Analysis")
         analysis = analysis_result if isinstance(analysis_result, dict) else {}
     except Exception as e:
@@ -53,7 +71,7 @@ async def analyze_resume(
         analysis = {"error": str(e)}
 
     # Ensure all required keys exist
-    for key in ["ats", "roast", "emotion", "credibility", "indian_market", "hackathons"]:
+    for key in ["ats", "roast", "emotion", "credibility", "indian_market", "hackathons", "github_portfolio"]:
         if key not in analysis:
             analysis[key] = {"error": "Missing from AI response"}
 
