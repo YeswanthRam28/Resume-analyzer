@@ -5,6 +5,7 @@ import ResultsPage from './pages/ResultsPage';
 import VideoPage from './pages/VideoPage';
 import DashboardPage from './pages/DashboardPage';
 import TailorPage from './pages/TailorPage';
+import RecruiterPage from './pages/RecruiterPage';
 
 export const router = createBrowserRouter([
   {
@@ -30,5 +31,9 @@ export const router = createBrowserRouter([
   {
     path: '/dashboard',
     element: <DashboardPage />,
+  },
+  {
+    path: '/recruiter',
+    element: <RecruiterPage />,
   }
 ]);

@@ -17,7 +17,10 @@ RÉSCORE is a full-stack web application that analyzes resumes using large langu
 | 🇮🇳 **Indian Market Lens** | Placement readiness for Tier 1 campus, FAANG India, unicorn startups, and service companies |
 | 🏆 **Hackathon Scorer** | Project-by-project impact scoring, vague claims detection, and reframing advice |
 | 🎥 **Video IQ** | Gemini-powered video resume analysis for delivery, filler words, eye contact, and emotion |
-| 📊 **Dashboard** | History of all resume and video sessions |
+| 👔 **Recruiter Dashboard** | Specialized view with trait-based vocabulary, candidate overview, and professional assessment |
+| 🪄 **AI Resume Tailoring** | Side-by-side 'Original vs. Optimized' view, dynamic prompt synthesis for external AI tools |
+| 🐙 **GitHub Sync** | Deep repository analysis, contradiction checks against resume, and tech stack mapping |
+| 📊 **Dashboard** | History of all resume, recruiter, and video sessions |
 
 ---
 
@@ -68,6 +71,9 @@ pip install -r requirements.txt
 cp .env.example .env
 # Fill in your API keys in .env
 
+# Run database migrations
+python run_migration.py
+
 # Start the server
 uvicorn main:app --reload
 ```
@@ -115,6 +121,18 @@ VITE_API_URL=http://localhost:8000
 
 ---
 
+## 🚢 Deployment
+
+The repository is configured for easy deployment on platforms like Render or Vercel.
+
+### Render (Recommended for full-stack)
+A `render.yaml` file is included in the root directory.
+1. Connect your repository to Render.
+2. Render will automatically detect the blueprint and create both the Web Service (FastAPI) and Static Site (React Vite).
+3. Fill in your environment variables in the Render dashboard.
+
+---
+
 ## 📁 Project Structure
 
 ```
@@ -122,25 +140,29 @@ Rescore/
 ├── backend/
 │   ├── routes/
 │   │   ├── resume.py       # Resume upload & master AI analysis
+│   │   ├── recruiter.py    # Recruiter view & parsing
+│   │   ├── tailor.py       # Resume optimization versions
 │   │   ├── video.py        # Video analysis (Gemini)
 │   │   └── history.py      # Session history
 │   ├── services/
 │   │   ├── nvidia_service.py   # NVIDIA NIM LLM client
 │   │   ├── gemini_service.py   # Google Gemini video client
+│   │   ├── github_service.py   # GitHub API integration
 │   │   └── parser_service.py   # PDF/DOCX text extractor
 │   ├── prompts/
-│   │   └── templates.py    # All AI prompts incl. MASTER_RESUME_PROMPT
+│   │   └── templates.py    # All AI prompts
 │   ├── models.py           # SQLModel database models
 │   ├── database.py         # DB engine, session, SQLite fallback
 │   ├── main.py             # FastAPI app entry point
+│   ├── run_migration.py    # DB migration script
 │   └── requirements.txt
 └── frontend/
     ├── src/
     │   ├── components/
-    │   │   ├── results/    # ATSScoreRing, RoastPanel, EmotionPersonaCard, etc.
+    │   │   ├── results/    # Score Rings, RoastPanel, Sync Panel, etc.
     │   │   ├── upload/     # ResumeUploader, VideoRecorder
-    │   │   └── ui/         # LimeButton, GlassCard, ProgressBar, etc.
-    │   ├── pages/          # AnalyzePage, ResultsPage, DashboardPage, VideoPage
+    │   │   └── ui/         # Buttons, Inputs, Progress Bars
+    │   ├── pages/          # Analyze, Results, Dashboard, Video, Tailor, Recruiter
     │   ├── lib/            # Zustand store, utils
     │   └── router.tsx
     └── vite.config.ts
@@ -154,10 +176,13 @@ Rescore/
 |---|---|---|
 | `POST` | `/api/resume/analyze` | Upload resume + optional JD, returns full analysis |
 | `GET` | `/api/resume/{session_id}` | Fetch a specific resume session |
+| `POST` | `/api/recruiter/analyze` | Upload resume, returns recruiter assessment |
+| `GET` | `/api/recruiter/{session_id}` | Fetch a specific recruiter session |
+| `POST` | `/api/tailor/save` | Save a tailored resume version |
+| `GET` | `/api/tailor/{session_id}` | Fetch tailored versions for a session |
 | `POST` | `/api/video/analyze` | Upload video, returns video IQ analysis |
 | `GET` | `/api/video/{session_id}` | Fetch a specific video session |
 | `GET` | `/api/history/history` | Get recent resume and video sessions |
-
 ---
 
 ## 🧠 Architecture Decisions

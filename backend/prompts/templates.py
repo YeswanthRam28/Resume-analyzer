@@ -385,3 +385,109 @@ Return a JSON object:
   "explanation": "short summary of the tailoring strategy used"
 }}
 """
+
+RECRUITER_PROMPT = """
+You are an expert talent acquisition specialist and professional resume analyst. Parse and assess the following resume with clinical precision.
+
+CRITICAL SECTION MAPPING RULE:
+Resumes use many different names for the same sections. You MUST intelligently map them:
+- "Summary", "Profile", "About", "About Me", "Objective", "Career Objective", "Professional Summary", "Personal Statement", "Overview", "Abstract", "Executive Summary", "Introduction" → map to the "summary" field
+- "Experience", "Work Experience", "Employment", "Employment History", "Professional Experience", "Work History", "Career History", "Industry Experience" → map to the "experience" array
+- "Education", "Academic Background", "Academics", "Qualifications", "Educational Background", "Academic Qualifications", "Schooling" → map to the "education" array
+- "Skills", "Technical Skills", "Core Competencies", "Competencies", "Expertise", "Key Skills", "Technologies", "Tech Stack", "Tools", "Proficiencies" → map to the "skills" object
+- "Projects", "Personal Projects", "Key Projects", "Academic Projects", "Side Projects", "Portfolio", "Work Samples", "Notable Projects" → map to the "projects" array
+- "Certifications", "Certificates", "Licenses", "Professional Certifications", "Professional Development", "Credentials" → map to the "certifications" array
+- "Awards", "Achievements", "Honors", "Accomplishments", "Recognition", "Awards & Recognition" → map to the "achievements" array
+- "Publications", "Research", "Papers", "Research Papers", "Research Work", "Published Work" → map to the "publications" array
+- "Volunteer", "Volunteering", "Volunteer Work", "Community Service", "Social Work", "Non-profit" → map to the "volunteer" array
+- "Languages", "Language Skills", "Spoken Languages" → map to the skills.languages array
+- "Interests", "Hobbies", "Activities", "Extracurricular", "Personal Interests" → map to the "interests" array
+
+Return ONLY a valid JSON object with the following structure:
+{{
+  "parsed_resume": {{
+    "candidate_name": "Full name extracted from resume",
+    "contact": {{
+      "email": "email or null",
+      "phone": "phone number or null",
+      "location": "city, country or null",
+      "linkedin": "LinkedIn URL or null",
+      "github": "GitHub URL or null",
+      "website": "portfolio/website URL or null"
+    }},
+    "summary": "Extracted summary/profile text verbatim, or null if not present",
+    "experience": [
+      {{
+        "company": "Company name",
+        "title": "Job title",
+        "duration": "e.g. Jan 2022 - Mar 2024",
+        "duration_months": <calculated number of months as integer>,
+        "location": "Location or null",
+        "highlights": ["bullet point 1", "bullet point 2"]
+      }}
+    ],
+    "education": [
+      {{
+        "institution": "University/College/School name",
+        "degree": "e.g. B.Tech, M.S., Ph.D.",
+        "field": "Field of study",
+        "graduation_year": "Year or Expected Year",
+        "gpa": "GPA/CGPA or null",
+        "highlights": ["honors, relevant coursework, etc."]
+      }}
+    ],
+    "skills": {{
+      "technical": ["list of technical/hard skills"],
+      "soft": ["list of soft skills explicitly mentioned"],
+      "languages_spoken": ["spoken/written languages if listed"],
+      "tools": ["specific tools, frameworks, platforms"]
+    }},
+    "projects": [
+      {{
+        "name": "Project name",
+        "description": "What the project does",
+        "technologies": ["tech stack used"],
+        "impact": "Measurable outcome or impact, or null"
+      }}
+    ],
+    "certifications": ["certification 1", "certification 2"],
+    "achievements": ["achievement 1", "achievement 2"],
+    "publications": ["publication 1"],
+    "volunteer": ["volunteer experience 1"],
+    "interests": ["interest 1", "interest 2"],
+    "total_experience_years": <calculated float, e.g. 2.5>,
+    "career_level": "one of: Fresher / Entry-Level / Junior / Mid-Level / Senior / Lead / Principal / Executive"
+  }},
+  "professional_assessment": {{
+    "overall_score": <0-100 integer representing overall candidate quality>,
+    "executive_summary": "2-3 sentence professional summary of the candidate for a recruiter",
+    "communication_style": "Professional assessment of how the candidate presents themselves on paper — word choice, clarity, confidence",
+    "leadership_indicators": ["specific evidence of leadership extracted from resume text"],
+    "personality_profile": {{
+      "archetype": "Choose ONE primary descriptor that best defines this candidate's dominant professional energy. Must be exactly one of: Driven / Relentless / Decisive / Focused / Precise / Bold / Analytical / Strategic / Visionary / Methodical / Pragmatic / Adaptive / Optimistic / Ambitious / Tenacious / Composed / Resilient / Inventive / Resourceful / Iterative / Systematic / Experimental / Commanding / Influential / Principled / Deliberate / Authoritative",
+      "traits": ["Pick 3 secondary descriptors from the same list that complement the archetype"],
+      "work_style": "Inferred working style based on language patterns and role choices",
+      "collaboration_index": <0-10 float>,
+      "innovation_index": <0-10 float>,
+      "attention_to_detail": <0-10 float>,
+      "growth_trajectory": "Assessment of career growth direction and velocity"
+    }},
+    "strengths": ["Professional strength 1", "Professional strength 2", "Professional strength 3"],
+    "red_flags": ["Professional concern 1 with brief rationale"],
+    "green_flags": ["Positive signal 1", "Positive signal 2"],
+    "skill_gaps": ["Missing skill or experience that would strengthen the profile"],
+    "culture_fit_signals": ["Signal suggesting team/culture preferences"],
+    "recommended_interview_questions": [
+      {{
+        "question": "Tailored interview question based on resume",
+        "rationale": "Why this question is relevant"
+      }}
+    ],
+    "hire_recommendation": "one of: Strong Recommend / Recommend / Neutral / Do Not Recommend",
+    "hire_reasoning": "1-2 sentence professional rationale for the recommendation"
+  }}
+}}
+
+Resume to analyze:
+{resume_text}
+"""

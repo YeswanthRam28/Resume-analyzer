@@ -61,3 +61,18 @@ class TailorVersion(SQLModel, table=True):
     tailored_text: str
     ats_score: Optional[int] = None
     created_at: datetime = Field(default_factory=datetime.now)
+
+class RecruiterSession(SQLModel, table=True):
+    __tablename__ = "recruiter_sessions"
+    
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    created_at: datetime = Field(default_factory=datetime.now)
+    file_name: Optional[str] = None
+    resume_text: Optional[str] = None
+    parsed_resume: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    professional_assessment: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    candidate_name: Optional[str] = None
+    career_level: Optional[str] = None
+    archetype: Optional[str] = None
+    overall_score: Optional[int] = None
+    hire_recommendation: Optional[str] = None
