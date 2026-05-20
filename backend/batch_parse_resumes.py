@@ -117,16 +117,8 @@ def run_batch_parsing():
             print(f"  [ERROR] An error occurred during request execution: {e}")
             fail_count += 1
             
-        # Sleep for 3 minutes (180 seconds) between tests if there are more files
+        # Move to next file immediately
         if index < total_files:
-            print(f"\nWaiting for {SLEEP_INTERVAL_SEC} seconds (3 minutes) before the next resume...")
-            # Interactive countdown timer in console
-            for remaining in range(SLEEP_INTERVAL_SEC, 0, -1):
-                if remaining % 30 == 0 or remaining <= 5:
-                    sys.stdout.write(f"\r  Time remaining: {remaining} seconds... ")
-                    sys.stdout.flush()
-                time.sleep(1)
-            print("\r  Wait complete. Proceeding to next file!            ")
             print("-" * 60)
             
     print("\n" + "=" * 60)
