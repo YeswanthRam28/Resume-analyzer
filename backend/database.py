@@ -13,6 +13,7 @@ if not DATABASE_URL or "your_neondb_url" in DATABASE_URL:
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 def init_db():
+    global engine
     try:
         SQLModel.metadata.create_all(engine)
     except Exception as e:
@@ -20,8 +21,8 @@ def init_db():
         # Optionally fallback to local sqlite if Neon fails
         if "sqlite" not in str(engine.url):
             print("Falling back to local SQLite for this session...")
-            local_engine = create_engine("sqlite:///./rescore.db")
-            SQLModel.metadata.create_all(local_engine)
+            engine = create_engine("sqlite:///./rescore.db")
+            SQLModel.metadata.create_all(engine)
 
 def get_session():
     with Session(engine) as session:

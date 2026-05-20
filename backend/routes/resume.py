@@ -1,11 +1,11 @@
 from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_session
-from models import ResumeSession, GitHubRepo
+from models import ResumeSession, GitHubRepo, Resume
 from services.parser_service import ParserService
 from services.nvidia_service import NvidiaService
 from services.github_service import GitHubService
-from prompts.templates import MASTER_RESUME_PROMPT
+from prompts.templates import MASTER_RESUME_PROMPT, RESUME_PARSER_PROMPT
 import asyncio
 import uuid
 
@@ -106,3 +106,73 @@ async def get_result(session_id: str, db: Session = Depends(get_session)):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     return session
+
+@router.post("/parse")
+async def parse_resume(
+    file: UploadFile = File(...),
+    target_role: str = Form(None),
+    github_username: str = Form(None),
+    db: Session = Depends(get_session)
+):
+    # 1. Parse Resume Text
+    try:
+        content = await file.read()
+        resume_text = await ParserService.extract_text(content, file.filename)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # 2. Create Session
+    session = ResumeSession(
+        resume_text=resume_text,
+        file_name=file.filename,
+        target_role=target_role,
+        github_username=github_username
+    )
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+    
+    session_id_val = session.id
+
+    # 3. Close the DB session during the long AI call to avoid SSL idle timeout
+    db.close() 
+
+    # 4. AI Structured Extraction
+    try:
+        prompt = RESUME_PARSER_PROMPT.format(resume_text=resume_text)
+        parsed_result = await nvidia.run_prompt(prompt, "Resume Structured Parsing")
+        if not isinstance(parsed_result, dict):
+            raise ValueError("AI did not return a valid dictionary")
+    except Exception as e:
+        print(f"Resume parsing LLM task failed: {e}")
+        raise HTTPException(status_code=500, detail=f"LLM Parsing failed: {str(e)}")
+
+    # 5. Populate and Save the Resume record
+    try:
+        with next(get_session()) as new_db:
+            parsed_resume = Resume(
+                session_id=session_id_val,
+                contact_info=parsed_result.get("contact_info"),
+                summary=parsed_result.get("summary"),
+                experience=parsed_result.get("experience"),
+                education=parsed_result.get("education"),
+                skills=parsed_result.get("skills"),
+                projects=parsed_result.get("projects"),
+                certifications=parsed_result.get("certifications"),
+                achievements=parsed_result.get("achievements"),
+                publications=parsed_result.get("publications"),
+                languages=parsed_result.get("languages"),
+                volunteer_work=parsed_result.get("volunteer_work")
+            )
+            new_db.add(parsed_resume)
+            new_db.commit()
+            new_db.refresh(parsed_resume)
+    except Exception as e:
+        print(f"Saving structured resume record failed: {e}")
+        raise HTTPException(status_code=500, detail=f"DB persistence failed: {str(e)}")
+
+    return {
+        "session_id": str(session_id_val),
+        "parsed_resume": parsed_result
+    }
+

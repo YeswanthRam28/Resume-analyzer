@@ -491,3 +491,68 @@ Return ONLY a valid JSON object with the following structure:
 Resume to analyze:
 {resume_text}
 """
+
+RESUME_PARSER_PROMPT = """
+You are a precise resume parser. Your job is to extract sections of the following resume and map them into the exact JSON schema provided below. 
+
+Return ONLY a valid JSON object matching this schema structure:
+{{
+  "contact_info": {{
+    "name": "Full name or null",
+    "email": "email address or null",
+    "phone": "phone number or null",
+    "location": {{
+      "city": "City or null",
+      "state": "State/Region or null"
+    }},
+    "linkedin": "LinkedIn URL or null",
+    "portfolio": "Portfolio/Website URL or null"
+  }},
+  "summary": "Verbatim professional summary or null",
+  "experience": [
+    {{
+      "title": "Job title",
+      "company": "Company name",
+      "location": "Location or null",
+      "start_date": "YYYY-MM or string",
+      "end_date": "YYYY-MM or string or null (if current)",
+      "is_current": true/false,
+      "bullets": ["bullet point 1", "bullet point 2"]
+    }}
+  ],
+  "education": [
+    {{
+      "institution": "University/School name",
+      "location": "Location or null",
+      "degree": "Degree name",
+      "field": "Field of study",
+      "start_date": "YYYY or string or null",
+      "end_date": "YYYY or string or null",
+      "gpa": "GPA or null"
+    }}
+  ],
+  "skills": {{
+    "programming_languages": ["list of programming languages"],
+    "frameworks_tools": ["list of tools/frameworks"],
+    "methodologies": ["list of methodologies/processes"],
+    "domains": ["areas of expertise"]
+  }},
+  "projects": [
+    {{
+      "name": "Project name",
+      "description": "Project description",
+      "technologies": ["tech stack"],
+      "impact": "measurable impact or outcome or null"
+    }}
+  ],
+  "certifications": ["certification 1"],
+  "achievements": ["award or achievement 1"],
+  "publications": ["publication title/citation 1"],
+  "languages": ["language 1"],
+  "volunteer_work": ["volunteer role 1"]
+}}
+
+Resume Text:
+{resume_text}
+"""
+

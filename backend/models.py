@@ -62,6 +62,24 @@ class TailorVersion(SQLModel, table=True):
     ats_score: Optional[int] = None
     created_at: datetime = Field(default_factory=datetime.now)
 
+class Resume(SQLModel, table=True):
+    __tablename__ = "resume"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    session_id: uuid.UUID = Field(foreign_key="resume_sessions.id", ondelete="CASCADE")
+    created_at: datetime = Field(default_factory=datetime.now)
+    contact_info: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    summary: Optional[str] = None
+    experience: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    education: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    skills: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    projects: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    certifications: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    achievements: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    publications: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    languages: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    volunteer_work: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+
 class RecruiterSession(SQLModel, table=True):
     __tablename__ = "recruiter_sessions"
     
