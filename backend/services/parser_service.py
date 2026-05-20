@@ -93,33 +93,81 @@ class ParserService:
         return await asyncio.to_thread(_upload_and_extract)
 
     @staticmethod
-    async def parse_image(file_content: bytes, filename: str) -> str:
-        from google import genai
-        from google.genai import types
+    async def parse_image_nvidia_fallback(file_content: bytes, filename: str) -> str:
+        import base64
+        from openai import AsyncOpenAI
         
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key or "your_gemini_api_key" in api_key:
-            raise ValueError("GEMINI_API_KEY is not configured. Image parsing requires a valid Gemini API Key.")
+        api_key = os.getenv("NVIDIA_API_KEY")
+        if not api_key or "your_nvidia_api_key" in api_key:
+            raise ValueError("NVIDIA_API_KEY is not configured for fallback OCR.")
             
-        client = genai.Client(api_key=api_key)
+        client = AsyncOpenAI(
+            base_url="https://integrate.api.nvidia.com/v1",
+            api_key=api_key
+        )
+        
         ext = os.path.splitext(filename)[1].lower()
         mime_type = "image/png" if ext == ".png" else "image/jpeg"
         
-        def _call_gemini():
-            response = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=[
-                    types.Part.from_bytes(
-                        data=file_content,
-                        mime_type=mime_type
-                    ),
-                    "Extract all text exactly from this resume image. Maintain the layout structure as much as possible. Do not include any conversation, introductions, or formatting markdown other than the extracted text."
-                ]
-            )
-            return response.text
+        base64_image = base64.b64encode(file_content).decode('utf-8')
+        
+        print("Using NVIDIA vision fallback (meta/llama-3.2-11b-vision-instruct)...")
+        response = await client.chat.completions.create(
+            model="meta/llama-3.2-11b-vision-instruct",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Extract all text exactly from this resume image. Maintain the layout structure as much as possible. Do not include any conversation, introductions, or formatting markdown other than the extracted text."},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{mime_type};base64,{base64_image}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=4096
+        )
+        return response.choices[0].message.content
+
+    @staticmethod
+    async def parse_image(file_content: bytes, filename: str) -> str:
+        try:
+            from google import genai
+            from google.genai import types
             
-        text = await asyncio.to_thread(_call_gemini)
-        return text
+            api_key = os.getenv("GEMINI_API_KEY")
+            if not api_key or "your_gemini_api_key" in api_key:
+                raise ValueError("GEMINI_API_KEY is not configured or invalid.")
+                
+            client = genai.Client(api_key=api_key)
+            ext = os.path.splitext(filename)[1].lower()
+            mime_type = "image/png" if ext == ".png" else "image/jpeg"
+            
+            def _call_gemini():
+                response = client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=[
+                        types.Part.from_bytes(
+                            data=file_content,
+                            mime_type=mime_type
+                        ),
+                        "Extract all text exactly from this resume image. Maintain the layout structure as much as possible. Do not include any conversation, introductions, or formatting markdown other than the extracted text."
+                    ]
+                )
+                return response.text
+                
+            text = await asyncio.to_thread(_call_gemini)
+            return text
+        except Exception as e:
+            print(f"Gemini image parsing failed: {e}. Attempting NVIDIA vision fallback...")
+            try:
+                return await ParserService.parse_image_nvidia_fallback(file_content, filename)
+            except Exception as fallback_err:
+                print(f"NVIDIA vision fallback failed: {fallback_err}")
+                raise ValueError(f"Both Gemini and NVIDIA Vision image parsing failed. Gemini Error: {str(e)}. NVIDIA Error: {str(fallback_err)}")
 
     @staticmethod
     async def extract_text(file_content: bytes, filename: str) -> str:
