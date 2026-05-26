@@ -18,7 +18,7 @@ class ParserService:
             return result.value
 
     @staticmethod
-    async def parse_svg(file_content: bytes) -> str:
+    def parse_svg_local(file_content: bytes) -> str:
         import xml.etree.ElementTree as ET
         try:
             root = ET.fromstring(file_content)
@@ -33,6 +33,58 @@ class ParserService:
             return ""
 
     @staticmethod
+    async def parse_svg_with_gemini(file_content: bytes, filename: str) -> str:
+        import tempfile
+        from google import genai
+        
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key or "your_gemini_api_key" in api_key:
+            return ParserService.parse_svg_local(file_content)
+            
+        client = genai.Client(api_key=api_key)
+        
+        def _upload_and_extract():
+            with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tmp:
+                tmp.write(file_content)
+                tmp_path = tmp.name
+                
+            try:
+                svg_file = client.files.upload(file=tmp_path)
+                
+                response = client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=[
+                        svg_file,
+                        "Extract all text exactly from this SVG image. Do not include any commentary."
+                    ]
+                )
+                
+                try:
+                    client.files.delete(name=svg_file.name)
+                except:
+                    pass
+                    
+                return response.text
+            except Exception as e:
+                print(f"Gemini SVG processing failed: {e}. Using local XML parser.")
+                return ParserService.parse_svg_local(file_content)
+            finally:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+                    
+        return await asyncio.to_thread(_upload_and_extract)
+
+    @staticmethod
+    async def parse_svg(file_content: bytes, filename: str) -> str:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if api_key and "your_gemini_api_key" not in api_key:
+            try:
+                return await ParserService.parse_svg_with_gemini(file_content, filename)
+            except Exception as e:
+                print(f"Gemini SVG parsing failed: {e}. Falling back to local XML.")
+        return ParserService.parse_svg_local(file_content)
+
+    @staticmethod
     def parse_doc_fallback(file_content: bytes) -> str:
         import re
         try:
@@ -41,12 +93,73 @@ class ParserService:
             cleaned = []
             for w in words:
                 w_str = w.strip()
-                if w_str and not all(c in "!@#$%^&*()_+=-`~[]\\{}|;':\",./<>?" for c in w_str):
-                    cleaned.append(w_str)
+                if not w_str:
+                    continue
+                # Skip strings containing common binary signatures
+                if any(sig in w_str for sig in ["PNG", "IHDR", "IDAT", "JFIF", "Exif", "ActiveX", "Microsoft", "Word.Document", "ObjectPool"]):
+                    continue
+                # Skip lines that are too long with no spaces (base64 or hex data)
+                if len(w_str) > 100 and " " not in w_str:
+                    continue
+                # Skip lines containing high special character density (e.g. binary junk)
+                non_alnum = len(re.sub(r'[a-zA-Z0-9\s]', '', w_str))
+                if len(w_str) > 0 and (non_alnum / len(w_str)) > 0.3:
+                    continue
+                cleaned.append(w_str)
             return "\n".join(cleaned)
         except Exception as e:
             print(f"Fallback .doc parsing error: {e}")
             return ""
+
+    @staticmethod
+    async def parse_doc_local_win32(file_content: bytes, filename: str) -> str:
+        import tempfile
+        try:
+            import win32com.client
+            import pythoncom
+        except ImportError:
+            raise ImportError("win32com or pythoncom not installed.")
+
+        def _read_win32():
+            pythoncom.CoInitialize()
+            ext = os.path.splitext(filename)[1].lower()
+            with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+                tmp.write(file_content)
+                tmp_path = tmp.name
+                
+            text = ""
+            word = None
+            doc = None
+            try:
+                word = win32com.client.Dispatch("Word.Application")
+                word.Visible = False
+                word.DisplayAlerts = False
+                
+                doc = word.Documents.Open(tmp_path)
+                text = doc.Content.Text
+            except Exception as e:
+                print(f"Local win32com Word extraction failed: {e}")
+                raise e
+            finally:
+                if doc:
+                    try:
+                        doc.Close(False)
+                    except:
+                        pass
+                if word:
+                    try:
+                        word.Quit()
+                    except:
+                        pass
+                if os.path.exists(tmp_path):
+                    try:
+                        os.remove(tmp_path)
+                    except:
+                        pass
+                pythoncom.CoUninitialize()
+            return text
+
+        return await asyncio.to_thread(_read_win32)
 
     @staticmethod
     async def parse_doc_with_gemini(file_content: bytes, filename: str) -> str:
@@ -177,9 +290,13 @@ class ParserService:
         elif fn_lower.endswith(".docx"):
             return await ParserService.parse_docx(file_content)
         elif fn_lower.endswith(".doc"):
-            return await ParserService.parse_doc_with_gemini(file_content, filename)
+            try:
+                return await ParserService.parse_doc_local_win32(file_content, filename)
+            except Exception as e:
+                print(f"Local Word extraction failed for {filename}: {e}. Falling back to Gemini/regex parsing.")
+                return await ParserService.parse_doc_with_gemini(file_content, filename)
         elif fn_lower.endswith(".svg"):
-            return await ParserService.parse_svg(file_content)
+            return await ParserService.parse_svg(file_content, filename)
         elif fn_lower.endswith((".png", ".jpg", ".jpeg")):
             return await ParserService.parse_image(file_content, filename)
         else:

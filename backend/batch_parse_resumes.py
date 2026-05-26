@@ -47,6 +47,8 @@ def scan_for_resumes(root_folder):
             inferred_role = f"{folder_name} Professional"
             
         for filename in filenames:
+            if filename.startswith("~$"):
+                continue
             ext = os.path.splitext(filename)[1].lower()
             if ext in supported_extensions:
                 full_path = os.path.join(dirpath, filename)
