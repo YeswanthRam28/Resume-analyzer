@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import ResumeUploader from '../components/upload/ResumeUploader';
 import LimeButton from '../components/ui/LimeButton';
 import { useStore } from '../lib/store';
+import { UserButton, useAuth, useUser } from '@clerk/react';
 import axios from 'axios';
 import ProgressBar from '../components/ui/ProgressBar';
 import { Terminal, Shield, Target, Github, Briefcase, User } from 'lucide-react';
@@ -21,7 +22,17 @@ export default function AnalyzePage() {
   const [mode, setMode] = useState<'candidate' | 'recruiter'>('candidate');
   
   const navigate = useNavigate();
-  const { setSession, setAnalysis } = useStore();
+  const { setSession, setAnalysis, userRole } = useStore();
+  const { getToken } = useAuth();
+  
+  // Set mode based on global role
+  useEffect(() => {
+    if (userRole === 'interviewer') {
+      setMode('recruiter');
+    } else {
+      setMode('candidate');
+    }
+  }, [userRole]);
 
   const handleUpload = (uploadedFile: File) => {
     setFile(uploadedFile);
@@ -40,7 +51,10 @@ export default function AnalyzePage() {
         setTimeout(() => setLoadingLines(prev => [...prev, "Running personality profiling..."]), 2500);
         setTimeout(() => setLoadingLines(prev => [...prev, "Generating professional assessment..."]), 4000);
 
-        const response = await axios.post(`${API_URL}/api/recruiter/analyze`, formData);
+        const token = await getToken();
+        const response = await axios.post(`${API_URL}/api/recruiter/analyze`, formData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         setLoadingLines(prev => [...prev, "Report complete. Redirecting..."]);
         setTimeout(() => {
           navigate('/recruiter', { state: { data: response.data } });
@@ -67,7 +81,10 @@ export default function AnalyzePage() {
       setTimeout(() => setLoadingLines(prev => [...prev, "Scanning Personality Signals..."]), 3000);
       setTimeout(() => setLoadingLines(prev => [...prev, "Checking Credibility Flags..."]), 4000);
 
-      const response = await axios.post(`${API_URL}/api/resume/analyze`, formData);
+      const token = await getToken();
+      const response = await axios.post(`${API_URL}/api/resume/analyze`, formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setSession(response.data.session_id);
       setAnalysis(response.data.analysis);
       setLoadingLines(prev => [...prev, "Analysis complete. Redirecting..."]);
@@ -82,7 +99,10 @@ export default function AnalyzePage() {
   };
 
   return (
-    <div className="min-h-screen bg-brand-bg text-brand-ink pt-20 px-6">
+    <div className="min-h-screen bg-brand-bg text-brand-ink pt-20 px-6 relative">
+      <div className="absolute top-6 right-6">
+        <UserButton appearance={{ elements: { avatarBox: "w-10 h-10 border border-brand-divider" } }} />
+      </div>
       <div className="max-w-4xl mx-auto">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -101,37 +121,11 @@ export default function AnalyzePage() {
 
         {/* Mode Toggle */}
         <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex justify-center mb-10"
-        >
-          <div className="inline-flex items-center bg-brand-card border border-brand-divider rounded-xl p-1 gap-1">
-            <button
-              onClick={() => setMode('candidate')}
-              className={cn(
-                "flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-mono uppercase tracking-widest transition-all duration-200",
-                mode === 'candidate'
-                  ? "bg-brand-primary text-brand-bg shadow-[0_0_15px_rgba(198,255,74,0.3)]"
-                  : "text-brand-muted hover:text-brand-ink"
-              )}
-            >
-              <User size={14} />
-              Candidate Mode
-            </button>
-            <button
-              onClick={() => setMode('recruiter')}
-              className={cn(
-                "flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-mono uppercase tracking-widest transition-all duration-200",
-                mode === 'recruiter'
-                  ? "bg-brand-secondary text-brand-bg shadow-[0_0_15px_rgba(0,220,255,0.3)]"
-                  : "text-brand-muted hover:text-brand-ink"
-              )}
-            >
-              <Briefcase size={14} />
-              Recruiter Mode
-            </button>
-          </div>
-        </motion.div>
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="relative z-10"
+        />
 
         {/* Recruiter mode note */}
         <AnimatePresence>

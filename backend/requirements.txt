@@ -10,3 +10,4 @@ pdfminer.six
 mammoth
 python-dotenv
 json-repair
+PyJWT

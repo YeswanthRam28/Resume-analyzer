@@ -3,10 +3,19 @@ from datetime import datetime
 from typing import Optional, List
 import uuid
 
+class User(SQLModel, table=True):
+    __tablename__ = "users"
+    
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    clerk_id: str = Field(unique=True, index=True)
+    role: Optional[str] = None # 'candidate' or 'interviewer'
+    created_at: datetime = Field(default_factory=datetime.now)
+
 class ResumeSession(SQLModel, table=True):
     __tablename__ = "resume_sessions"
     
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: Optional[str] = None # clerk_id
     created_at: datetime = Field(default_factory=datetime.now)
     resume_text: str
     file_url: Optional[str] = None
@@ -84,6 +93,7 @@ class RecruiterSession(SQLModel, table=True):
     __tablename__ = "recruiter_sessions"
     
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: Optional[str] = None # clerk_id
     created_at: datetime = Field(default_factory=datetime.now)
     file_name: Optional[str] = None
     resume_text: Optional[str] = None

@@ -19,8 +19,10 @@ import {
   Star,
   ChevronDown,
   Plus,
-  X
+  X,
+  LayoutDashboard
 } from 'lucide-react';
+import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/react';
 
 // --- Components ---
 
@@ -99,9 +101,28 @@ const Navbar = () => {
         ))}
       </div>
 
-      <button className="h-10 px-6 border border-brand-primary text-brand-primary font-sans text-xs uppercase tracking-wider hover:bg-brand-primary hover:text-brand-bg transition-all duration-200">
-        Analyze My Resume →
-      </button>
+      <div className="flex items-center gap-4">
+        <Show when="signed-out">
+          <SignInButton mode="modal" forceRedirectUrl="/dashboard">
+            <button className="font-sans text-xs text-brand-muted hover:text-white transition-colors">Sign In</button>
+          </SignInButton>
+          <SignUpButton mode="modal" forceRedirectUrl="/dashboard">
+            <button className="h-9 px-5 bg-brand-primary text-brand-bg font-sans font-medium text-xs flex items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(198,255,74,0.3)]">
+              Get Started
+            </button>
+          </SignUpButton>
+        </Show>
+        <Show when="signed-in">
+          <Link to="/dashboard">
+            <button className="flex items-center gap-2 font-sans text-xs text-brand-primary hover:text-brand-bg hover:bg-brand-primary border border-brand-primary h-9 px-4 transition-all duration-200">
+              <LayoutDashboard size={14} /> Dashboard
+            </button>
+          </Link>
+          <div className="ml-2 flex items-center">
+            <UserButton appearance={{ elements: { avatarBox: "w-9 h-9 border border-brand-divider" } }} />
+          </div>
+        </Show>
+      </div>
     </nav>
   );
 };

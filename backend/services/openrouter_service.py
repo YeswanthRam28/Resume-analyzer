@@ -2,29 +2,27 @@ import os
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 import json
+import re
 
 load_dotenv()
 
-class NvidiaService:
+class OpenRouterService:
     def __init__(self):
-        api_key = os.getenv("NVIDIA_API_KEY")
-        if not api_key or "your_nvidia_api_key" in api_key:
+        api_key = os.getenv("OPENROUTER_API_KEY")
+        if not api_key or "your_openrouter_api_key" in api_key:
             # For development, we'll allow initialization but fail gracefully on run
             api_key = "sk-no-key-provided"
             
         self.client = AsyncOpenAI(
-            base_url="https://integrate.api.nvidia.com/v1",
+            base_url="https://openrouter.ai/api/v1",
             api_key=api_key
         )
-        self.model = "meta/llama-3.1-405b-instruct" # Placeholder: adjust to GLM-4 if specific ID is known
-        # The user specifically asked for GLM-4.7 (likely GLM-4-9B or similar)
-        # I'll use a generic placeholder or the specific GLM-4 ID if I can find it.
-        # For now, I'll use a widely available one or "thm/glm-4-9b-chat" if it exists.
+        self.model = "deepseek/deepseek-v4-flash" # As requested by user
 
     async def run_prompt(self, system_prompt: str, user_prompt: str) -> dict:
         try:
             response = await self.client.chat.completions.create(
-                model="minimaxai/minimax-m2.7", 
+                model=self.model, 
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
@@ -44,7 +42,6 @@ class NvidiaService:
             elif "```" in content:
                 content = content.split("```")[1].split("```")[0].strip()
             
-            import re
             # Fix trailing commas which cause 'Expecting property name enclosed in double quotes'
             content = re.sub(r',\s*([\}\]])', r'\1', content)
             
@@ -73,7 +70,7 @@ class NvidiaService:
                             pass
                 raise
         except Exception as e:
-            print(f"Error in NvidiaService: {e}")
+            print(f"Error in OpenRouterService: {e}")
             if hasattr(e, 'response'):
                 print(f"Response status: {e.response.status_code}")
                 print(f"Response body: {e.response.text}")

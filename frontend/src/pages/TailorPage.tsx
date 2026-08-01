@@ -1,57 +1,90 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Sparkles, Wand2, CheckCircle2, History, Copy, Download, Share2, Rocket } from 'lucide-react';
+import { ArrowLeft, Sparkles, Download, LayoutTemplate, History } from 'lucide-react';
+import { UserButton } from '@clerk/react';
 import axios from 'axios';
-import ReactMarkdown from 'react-markdown';
-import { cn } from '../lib/utils';
+import { useReactToPrint } from 'react-to-print';
 import GlassCard from '../components/ui/GlassCard';
 import LimeButton from '../components/ui/LimeButton';
 import ProgressBar from '../components/ui/ProgressBar';
 
+import MinimalistTemplate from '../components/templates/MinimalistTemplate';
+import ModernTemplate from '../components/templates/ModernTemplate';
+import ExecutiveTemplate from '../components/templates/ExecutiveTemplate';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+const TEMPLATES = [
+  { id: 'minimalist', name: 'Minimalist Clean', component: MinimalistTemplate, type: 'react' },
+  { id: 'modern', name: 'Modern Impact', component: ModernTemplate, type: 'react' },
+  { id: 'executive', name: 'Executive Suite', component: ExecutiveTemplate, type: 'react' },
+  { id: 'flat', name: 'JSON Flat', type: 'iframe' },
+  { id: 'elegant', name: 'JSON Elegant', type: 'iframe' },
+  { id: 'macchiato', name: 'JSON Macchiato', type: 'iframe' },
+  { id: 'kendall', name: 'JSON Kendall', type: 'iframe' },
+  { id: 'spartan', name: 'JSON Spartan', type: 'iframe' },
+  { id: 'onepage', name: 'JSON OnePage', type: 'iframe' },
+  { id: 'classy', name: 'JSON Classy', type: 'iframe' },
+  { id: 'cora', name: 'JSON Cora', type: 'iframe' },
+  { id: 'modern', name: 'JSON Modern', type: 'iframe' },
+  { id: 'straightforward', name: 'JSON Straightforward', type: 'iframe' },
+  { id: 'catppuccin', name: 'JSON Catppuccin', type: 'iframe' },
+  { id: 'waterfall', name: 'JSON Waterfall', type: 'iframe' },
+  { id: 'msresume', name: 'JSON MSResume', type: 'iframe' },
+  { id: 'lowmess', name: 'JSON Lowmess', type: 'iframe' },
+  { id: 'even-crewshin', name: 'JSON Even Crewshin', type: 'iframe' },
+  { id: 'projects', name: 'JSON Projects', type: 'iframe' },
+  { id: 'timeline-fixed', name: 'JSON Timeline Fixed', type: 'iframe' },
+  { id: 'even', name: 'JSON Even', type: 'iframe' },
+  { id: 'simplyelegant', name: 'JSON Simply Elegant', type: 'iframe' },
+  { id: 'dark-classy', name: 'JSON Dark Classy', type: 'iframe' },
+  { id: 'engineering', name: 'JSON Engineering', type: 'iframe' },
+  { id: 'berlin-grid-ats', name: 'JSON Berlin Grid ATS', type: 'iframe' },
+  { id: 'a11y', name: 'JSON A11y', type: 'iframe' },
+  { id: 'stackoverflow', name: 'JSON StackOverflow', type: 'iframe' }
+];
 
 export default function TailorPage() {
   const { sessionId } = useParams();
   const navigate = useNavigate();
-  const [session, setSession] = useState<any>(null);
+  
   const [loading, setLoading] = useState(true);
   const [tailoring, setTailoring] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [resumeData, setResumeData] = useState<any>(null);
   const [versions, setVersions] = useState<any[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('minimalist');
+  const [activeVersionIndex, setActiveVersionIndex] = useState<number>(-1); // -1 means original parsed data
+
+  const printRef = useRef(null);
+  
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: 'Rescore_Tailored_Resume',
+  });
 
   useEffect(() => {
-    fetchSession();
-    fetchVersions();
+    fetchData();
   }, [sessionId]);
 
-  const fetchSession = async () => {
+  const fetchData = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/resume/${sessionId}`);
-      setSession(response.data);
-    } catch (err) {
-      console.error("Failed to fetch session:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchVersions = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/api/tailor/versions/${sessionId}`);
-      setVersions(response.data);
-      if (response.data.length > 0) {
-        // Show the latest version by default
-        const latest = response.data[response.data.length - 1];
-        setResult({
-          tailored_text: latest.tailored_text,
-          ats_prediction: latest.ats_score,
-          changes_made: ["Loaded from history"],
-          explanation: `Tailored for ${latest.role}`
-        });
+      // Fetch the structured JSON representation of the resume
+      const parsedRes = await axios.get(`${API_URL}/api/resume/${sessionId}/parsed`);
+      setResumeData(parsedRes.data);
+      
+      // Fetch AI tailoring history
+      const versionsRes = await axios.get(`${API_URL}/api/tailor/versions/${sessionId}`);
+      setVersions(versionsRes.data);
+      
+      // If there are tailored versions, load the latest one automatically
+      if (versionsRes.data.length > 0) {
+        setActiveVersionIndex(versionsRes.data.length - 1);
       }
     } catch (err) {
-      console.error("Failed to fetch versions:", err);
+      console.error("Failed to fetch resume data:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -59,8 +92,12 @@ export default function TailorPage() {
     setTailoring(true);
     try {
       const response = await axios.post(`${API_URL}/api/tailor/${sessionId}`);
-      setResult(response.data);
-      fetchVersions();
+      // Refresh versions
+      const versionsRes = await axios.get(`${API_URL}/api/tailor/versions/${sessionId}`);
+      setVersions(versionsRes.data);
+      if (versionsRes.data.length > 0) {
+        setActiveVersionIndex(versionsRes.data.length - 1);
+      }
     } catch (err) {
       console.error("Tailoring failed:", err);
     } finally {
@@ -68,20 +105,37 @@ export default function TailorPage() {
     }
   };
 
+  // Determine which data to show: the original parsed data, or one of the tailored JSON versions
+  const getCurrentData = () => {
+    if (activeVersionIndex >= 0 && versions.length > 0) {
+      try {
+        const tailoredStr = versions[activeVersionIndex].tailored_text;
+        return JSON.parse(tailoredStr);
+      } catch (e) {
+        console.error("Failed to parse tailored JSON version", e);
+      }
+    }
+    return resumeData; // Fallback to original
+  };
+
+  const selectedTemplate = TEMPLATES.find(t => t.id === selectedTemplateId) || TEMPLATES[0];
+  const SelectedTemplateComponent = selectedTemplate.component as React.ElementType;
+  const currentDataToRender = getCurrentData();
+
   if (loading) return (
     <div className="min-h-screen bg-brand-bg flex items-center justify-center">
       <div className="w-64 space-y-4">
-        <p className="text-center text-[10px] font-mono uppercase tracking-widest text-brand-muted">Loading Session...</p>
+        <p className="text-center text-[10px] font-mono uppercase tracking-widest text-brand-muted">Loading Templates...</p>
         <ProgressBar percent={100} showLabel={false} />
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-brand-bg text-brand-ink">
+    <div className="min-h-screen bg-brand-bg text-brand-ink flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="border-b border-brand-divider bg-brand-bg/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <header className="border-b border-brand-divider bg-brand-bg/80 backdrop-blur-md shrink-0">
+        <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => navigate(`/results/${sessionId}`)}
@@ -91,8 +145,8 @@ export default function TailorPage() {
             </button>
             <div className="h-6 w-px bg-brand-divider" />
             <div className="flex items-center gap-2">
-              <Wand2 size={18} className="text-brand-primary" />
-              <h1 className="font-heading uppercase tracking-tight">AI Resume Tailor</h1>
+              <LayoutTemplate size={18} className="text-brand-primary" />
+              <h1 className="font-heading uppercase tracking-tight">Resume Templates</h1>
             </div>
           </div>
 
@@ -100,156 +154,113 @@ export default function TailorPage() {
             <LimeButton 
               onClick={handleTailor} 
               disabled={tailoring}
-              className="h-9 px-4 text-xs group"
+              className="h-9 px-4 text-xs group bg-transparent border border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-brand-bg"
             >
-              {tailoring ? (
-                <span className="flex items-center gap-2">
-                  <div className="w-3 h-3 border-2 border-brand-ink/30 border-t-brand-ink rounded-full animate-spin" />
-                  Optimizing...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Sparkles size={14} className="group-hover:rotate-12 transition-transform" />
-                  Tailor Resume
-                </span>
-              )}
+              {tailoring ? 'AI is Tailoring...' : 'AI Tailor (Rewrite)'}
             </LimeButton>
+            
+            <LimeButton 
+              onClick={handlePrint}
+              className="h-9 px-4 text-xs flex items-center gap-2"
+            >
+              <Download size={14} /> Export PDF
+            </LimeButton>
+            <div className="ml-2 flex items-center">
+              <UserButton appearance={{ elements: { avatarBox: "w-9 h-9 border border-brand-divider" } }} />
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-200px)]">
-          {/* Left Column: Original */}
-          <div className="flex flex-col space-y-4">
-            <div className="flex items-center justify-between px-2">
-              <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-brand-muted">Original Resume</h3>
-              <span className="text-[10px] font-mono text-brand-ghost">READ ONLY</span>
+      <div className="flex flex-1 overflow-hidden max-w-[1400px] mx-auto w-full">
+        {/* Left Sidebar: Settings & Templates */}
+        <div className="w-80 border-r border-brand-divider overflow-y-auto p-6 flex flex-col gap-8 shrink-0">
+          
+          <div>
+            <h2 className="text-[10px] font-mono uppercase tracking-[0.2em] text-brand-muted mb-4">Choose Template</h2>
+            <div className="space-y-3">
+              {TEMPLATES.map(template => (
+                <button
+                  key={template.id}
+                  onClick={() => setSelectedTemplateId(template.id)}
+                  className={`w-full text-left p-4 rounded-xl border transition-all ${
+                    selectedTemplateId === template.id 
+                      ? 'border-brand-primary bg-brand-primary/10 text-brand-ink' 
+                      : 'border-brand-divider bg-brand-card text-brand-muted hover:border-brand-ghost'
+                  }`}
+                >
+                  <div className="font-heading text-lg">{template.name}</div>
+                  <div className="text-[10px] font-sans mt-1 opacity-70">A4 • Optimized for ATS</div>
+                </button>
+              ))}
             </div>
-            <GlassCard className="flex-1 overflow-hidden flex flex-col p-0">
-              <div className="flex-1 overflow-y-auto p-8 font-sans text-sm leading-relaxed text-brand-muted whitespace-pre-wrap selection:bg-brand-primary/20">
-                {session?.resume_text}
-              </div>
-            </GlassCard>
           </div>
 
-          {/* Right Column: Optimized */}
-          <div className="flex flex-col space-y-4">
-            <div className="flex items-center justify-between px-2">
-              <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-brand-primary font-bold">AI Optimized Version</h3>
-              {result && (
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-mono text-brand-primary">EST. ATS: {result.ats_prediction}%</span>
-                </div>
-              )}
+          <div>
+            <h2 className="text-[10px] font-mono uppercase tracking-[0.2em] text-brand-muted mb-4 flex items-center gap-2">
+              <History size={12} /> Version History
+            </h2>
+            <div className="space-y-2">
+              <button 
+                onClick={() => setActiveVersionIndex(-1)}
+                className={`w-full text-left p-3 rounded-lg border text-xs transition-all ${
+                  activeVersionIndex === -1 
+                    ? 'border-brand-primary text-brand-primary bg-brand-bg' 
+                    : 'border-brand-divider text-brand-muted hover:border-brand-ghost'
+                }`}
+              >
+                Original Parsed Resume
+              </button>
+              {versions.map((v: any, i: number) => (
+                <button 
+                  key={v.id}
+                  onClick={() => setActiveVersionIndex(i)}
+                  className={`w-full text-left p-3 rounded-lg border text-xs transition-all flex items-center justify-between group ${
+                    activeVersionIndex === i 
+                      ? 'bg-brand-primary/10 border-brand-primary text-brand-ink' 
+                      : 'bg-brand-bg border-brand-divider text-brand-muted hover:border-brand-ghost'
+                  }`}
+                >
+                  <span>AI Tailored #{i + 1}</span>
+                  <span className="text-[10px] text-brand-ghost">{new Date(v.created_at).toLocaleDateString()}</span>
+                </button>
+              ))}
             </div>
-
-            <GlassCard className={cn(
-              "flex-1 overflow-hidden flex flex-col p-0 border-2 transition-all",
-              result ? "border-brand-primary/30" : "border-brand-divider"
-            )}>
-              <div className="flex-1 overflow-y-auto p-8 prose prose-invert prose-brand max-w-none">
-                {tailoring ? (
-                  <div className="h-full flex flex-col items-center justify-center space-y-6 text-center">
-                    <div className="relative">
-                      <div className="w-16 h-16 border-4 border-brand-primary/20 border-t-brand-primary rounded-full animate-spin" />
-                      <Sparkles className="absolute inset-0 m-auto text-brand-primary animate-pulse" size={24} />
-                    </div>
-                    <div>
-                      <p className="font-heading text-xl uppercase tracking-tight">Applying X-Y-Z Formula</p>
-                      <p className="text-sm text-brand-muted mt-2">Rewriting impact bullets and removing fluff...</p>
-                    </div>
-                  </div>
-                ) : result ? (
-                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                    <ReactMarkdown>
-                      {result.tailored_text}
-                    </ReactMarkdown>
-                  </div>
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-center p-12 space-y-6">
-                    <div className="p-4 bg-brand-card rounded-2xl border border-brand-divider">
-                      <Rocket size={32} className="text-brand-ghost" />
-                    </div>
-                    <div>
-                      <p className="font-heading text-xl uppercase tracking-tight">Ready for Redemption?</p>
-                      <p className="text-sm text-brand-muted mt-2 max-w-xs mx-auto">
-                        Click the "Tailor Resume" button to fix the sins found in your analysis and generate a high-impact version.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </GlassCard>
           </div>
+          
         </div>
 
-        {/* Improvements & Versions Bar */}
-        <AnimatePresence>
-          {result && !tailoring && (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6"
-            >
-              <GlassCard className="lg:col-span-2">
-                <h4 className="text-[10px] font-mono uppercase tracking-[0.2em] text-brand-primary mb-4 flex items-center gap-2">
-                  <CheckCircle2 size={12} />
-                  Improvements Applied
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {result.changes_made?.map((change: string, i: number) => (
-                    <div key={i} className="flex items-start gap-2 text-xs text-brand-muted">
-                      <span className="text-brand-primary mt-1">•</span>
-                      <span>{change}</span>
-                    </div>
-                  ))}
-                </div>
-              </GlassCard>
-
-              <GlassCard>
-                <h4 className="text-[10px] font-mono uppercase tracking-[0.2em] text-brand-muted mb-4 flex items-center gap-2">
-                  <History size={12} />
-                  Version History
-                </h4>
-                <div className="space-y-2">
-                  {versions.map((v: any, i: number) => (
-                    <button 
-                      key={v.id}
-                      onClick={() => setResult({
-                        tailored_text: v.tailored_text,
-                        ats_prediction: v.ats_score,
-                        changes_made: ["Loaded from history"],
-                        explanation: `Version ${i + 1}`
-                      })}
-                      className={cn(
-                        "w-full text-left p-3 rounded-lg border text-xs transition-all flex items-center justify-between group",
-                        result.tailored_text === v.tailored_text 
-                          ? "bg-brand-primary/10 border-brand-primary text-brand-ink" 
-                          : "bg-brand-bg border-brand-divider text-brand-muted hover:border-brand-ghost"
-                      )}
-                    >
-                      <span>Version {i + 1} - {v.role}</span>
-                      <span className="text-[10px] text-brand-ghost group-hover:text-brand-primary">
-                        {new Date(v.created_at).toLocaleDateString()}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </GlassCard>
-            </motion.div>
+        {/* Right Main Area: Live Preview */}
+        <div className="flex-1 bg-brand-card/50 overflow-y-auto p-8 relative flex justify-center custom-scrollbar">
+          {tailoring && (
+            <div className="absolute inset-0 z-10 bg-brand-bg/80 backdrop-blur-sm flex flex-col items-center justify-center">
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-brand-primary/20 border-t-brand-primary rounded-full animate-spin" />
+                <Sparkles className="absolute inset-0 m-auto text-brand-primary animate-pulse" size={24} />
+              </div>
+              <p className="font-heading text-xl uppercase tracking-tight mt-6">AI is rewriting your resume...</p>
+              <p className="text-sm text-brand-muted mt-2">Applying impact formulas and target keywords.</p>
+            </div>
           )}
-        </AnimatePresence>
-      </main>
 
-      <style dangerouslySetInnerHTML={{ __html: `
-        .markdown-body h1 { font-family: 'Outfit', sans-serif; font-size: 2rem; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: -0.02em; color: var(--brand-ink); }
-        .markdown-body h2 { font-family: 'Outfit', sans-serif; font-size: 1.25rem; margin-top: 2rem; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--brand-primary); border-bottom: 1px solid var(--brand-divider); padding-bottom: 0.5rem; }
-        .markdown-body p { margin-bottom: 1rem; color: var(--brand-ink); line-height: 1.6; }
-        .markdown-body ul { list-style: disc; margin-left: 1.5rem; margin-bottom: 1rem; }
-        .markdown-body li { margin-bottom: 0.5rem; color: var(--brand-muted); }
-        .markdown-body strong { color: var(--brand-ink); font-weight: 600; }
-      `}} />
+          {/* The print container that will be exported */}
+          <div className="shadow-2xl ring-1 ring-brand-divider transition-all duration-300 transform scale-[0.85] origin-top md:scale-100 bg-white">
+            <div ref={printRef} className="print:overflow-hidden print:w-[210mm] print:h-fit">
+              {selectedTemplate.type === 'react' ? (
+                <div className="w-[210mm] min-h-[297mm]">
+                  <SelectedTemplateComponent data={currentDataToRender} />
+                </div>
+              ) : (
+                <iframe 
+                  src={`${API_URL}/api/resume/${sessionId}/theme/${selectedTemplate.id}${activeVersionIndex !== -1 ? `?version_id=${versions[activeVersionIndex].id}` : ''}`} 
+                  title="Resume Preview"
+                  className="w-[210mm] min-h-[297mm] border-0"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

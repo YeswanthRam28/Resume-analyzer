@@ -2,13 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_session
 from models import ResumeSession, TailorVersion
-from services.nvidia_service import NvidiaService
+from services.openrouter_service import OpenRouterService
 from prompts.templates import TAILOR_PROMPT
 import uuid
 import json
 
 router = APIRouter()
-nvidia = NvidiaService()
+openrouter = OpenRouterService()
 
 @router.post("/{session_id}")
 async def tailor_resume(
@@ -45,17 +45,17 @@ async def tailor_resume(
             jd_text=target_role or session.target_role or "Standard optimization"
         )
         
-        result = await nvidia.run_prompt(prompt, "Tailor this resume")
+        result = await openrouter.run_prompt(prompt, "Tailor this resume")
         
-        if not result or "tailored_resume_markdown" not in result:
+        if not result or "tailored_resume_json" not in result:
             raise ValueError("Invalid AI response for tailoring")
 
-        # 4. Save version
+        # 4. Save version (we store the JSON string in the DB)
         with next(get_session()) as new_db:
             new_version = TailorVersion(
                 session_id=uuid.UUID(session_id),
                 role=target_role or session.target_role or "Tailored Version",
-                tailored_text=result["tailored_resume_markdown"],
+                tailored_text=json.dumps(result["tailored_resume_json"]),
                 ats_score=result.get("ats_prediction", 0)
             )
             new_db.add(new_version)

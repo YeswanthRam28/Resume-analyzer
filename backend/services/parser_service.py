@@ -33,55 +33,8 @@ class ParserService:
             return ""
 
     @staticmethod
-    async def parse_svg_with_gemini(file_content: bytes, filename: str) -> str:
-        import tempfile
-        from google import genai
-        
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key or "your_gemini_api_key" in api_key:
-            return ParserService.parse_svg_local(file_content)
-            
-        client = genai.Client(api_key=api_key)
-        
-        def _upload_and_extract():
-            with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tmp:
-                tmp.write(file_content)
-                tmp_path = tmp.name
-                
-            try:
-                svg_file = client.files.upload(file=tmp_path)
-                
-                response = client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=[
-                        svg_file,
-                        "Extract all text exactly from this SVG image. Do not include any commentary."
-                    ]
-                )
-                
-                try:
-                    client.files.delete(name=svg_file.name)
-                except:
-                    pass
-                    
-                return response.text
-            except Exception as e:
-                print(f"Gemini SVG processing failed: {e}. Using local XML parser.")
-                return ParserService.parse_svg_local(file_content)
-            finally:
-                if os.path.exists(tmp_path):
-                    os.remove(tmp_path)
-                    
-        return await asyncio.to_thread(_upload_and_extract)
-
-    @staticmethod
     async def parse_svg(file_content: bytes, filename: str) -> str:
-        api_key = os.getenv("GEMINI_API_KEY")
-        if api_key and "your_gemini_api_key" not in api_key:
-            try:
-                return await ParserService.parse_svg_with_gemini(file_content, filename)
-            except Exception as e:
-                print(f"Gemini SVG parsing failed: {e}. Falling back to local XML.")
+        # Fallback to local parsing without AI
         return ParserService.parse_svg_local(file_content)
 
     @staticmethod
@@ -114,6 +67,7 @@ class ParserService:
     @staticmethod
     async def parse_doc_local_win32(file_content: bytes, filename: str) -> str:
         import tempfile
+        import shutil
         try:
             import win32com.client
             import pythoncom
@@ -128,6 +82,7 @@ class ParserService:
                 tmp_path = tmp.name
                 
             text = ""
+            images = []
             word = None
             doc = None
             try:
@@ -137,6 +92,32 @@ class ParserService:
                 
                 doc = word.Documents.Open(tmp_path)
                 text = doc.Content.Text
+                
+                # Check if the extracted text is empty or extremely short/junk
+                # and contains inline shapes/objects
+                cleaned_text = text.replace('\r', '').replace('\n', '').strip() if text else ""
+                if len(cleaned_text) < 50 and doc.InlineShapes.Count > 0:
+                    print(f"Text in {filename} is too short ({len(cleaned_text)} chars). InlineShapes found. Saving as HTML to extract images...")
+                    temp_dir = tempfile.mkdtemp()
+                    html_path = os.path.join(temp_dir, "doc.html")
+                    doc.SaveAs2(html_path, FileFormat=10) # wdFormatFilteredHTML = 10
+                    
+                    # Read the extracted files
+                    files_dir = os.path.join(temp_dir, "doc_files")
+                    if os.path.exists(files_dir):
+                        for f in sorted(os.listdir(files_dir)):
+                            f_lower = f.lower()
+                            if f_lower.endswith((".jpg", ".jpeg", ".png", ".gif", ".emf", ".wmf")):
+                                img_path = os.path.join(files_dir, f)
+                                try:
+                                    with open(img_path, "rb") as img_file:
+                                        images.append(img_file.read())
+                                except Exception as img_err:
+                                    print(f"Failed to read image {f}: {img_err}")
+                    try:
+                        shutil.rmtree(temp_dir)
+                    except:
+                        pass
             except Exception as e:
                 print(f"Local win32com Word extraction failed: {e}")
                 raise e
@@ -157,65 +138,38 @@ class ParserService:
                     except:
                         pass
                 pythoncom.CoUninitialize()
-            return text
+            return text, images
 
-        return await asyncio.to_thread(_read_win32)
-
-    @staticmethod
-    async def parse_doc_with_gemini(file_content: bytes, filename: str) -> str:
-        import tempfile
-        from google import genai
+        text, images = await asyncio.to_thread(_read_win32)
         
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key or "your_gemini_api_key" in api_key:
-            print("GEMINI_API_KEY not configured. Falling back to local doc text extraction.")
-            return ParserService.parse_doc_fallback(file_content)
-            
-        client = genai.Client(api_key=api_key)
-        
-        def _upload_and_extract():
-            ext = os.path.splitext(filename)[1].lower()
-            with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
-                tmp.write(file_content)
-                tmp_path = tmp.name
-                
-            try:
-                doc_file = client.files.upload(file=tmp_path)
-                
-                response = client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=[
-                        doc_file,
-                        "Extract all text exactly from this resume document. Do not include any commentary."
-                    ]
-                )
-                
+        # If text is empty/short but we extracted images, run OCR on the images
+        cleaned_text = text.replace('\r', '').replace('\n', '').strip() if text else ""
+        if len(cleaned_text) < 50 and images:
+            print(f"Running OCR/Vision parser on {len(images)} extracted image(s) from {filename}...")
+            ocr_texts = []
+            for i, img_bytes in enumerate(images, 1):
                 try:
-                    client.files.delete(name=doc_file.name)
-                except:
-                    pass
-                    
-                return response.text
-            except Exception as e:
-                print(f"Gemini .doc processing failed: {e}. Using fallback.")
-                return ParserService.parse_doc_fallback(file_content)
-            finally:
-                if os.path.exists(tmp_path):
-                    os.remove(tmp_path)
-                    
-        return await asyncio.to_thread(_upload_and_extract)
+                    ocr_text = await ParserService.parse_image(img_bytes, f"extracted_{i}_{filename}.png")
+                    if ocr_text:
+                        ocr_texts.append(ocr_text)
+                except Exception as ocr_err:
+                    print(f"Failed to parse extracted image {i} from {filename}: {ocr_err}")
+            if ocr_texts:
+                return "\n\n".join(ocr_texts)
+                
+        return text
 
     @staticmethod
-    async def parse_image_nvidia_fallback(file_content: bytes, filename: str) -> str:
+    async def parse_image(file_content: bytes, filename: str) -> str:
         import base64
         from openai import AsyncOpenAI
         
-        api_key = os.getenv("NVIDIA_API_KEY")
-        if not api_key or "your_nvidia_api_key" in api_key:
-            raise ValueError("NVIDIA_API_KEY is not configured for fallback OCR.")
+        api_key = os.getenv("OPENROUTER_API_KEY")
+        if not api_key or "your_openrouter_api_key" in api_key:
+            raise ValueError("OPENROUTER_API_KEY is not configured for image parsing.")
             
         client = AsyncOpenAI(
-            base_url="https://integrate.api.nvidia.com/v1",
+            base_url="https://openrouter.ai/api/v1",
             api_key=api_key
         )
         
@@ -224,63 +178,29 @@ class ParserService:
         
         base64_image = base64.b64encode(file_content).decode('utf-8')
         
-        print("Using NVIDIA vision fallback (meta/llama-3.2-11b-vision-instruct)...")
-        response = await client.chat.completions.create(
-            model="meta/llama-3.2-11b-vision-instruct",
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": "Extract all text exactly from this resume image. Maintain the layout structure as much as possible. Do not include any conversation, introductions, or formatting markdown other than the extracted text."},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:{mime_type};base64,{base64_image}"
-                            }
-                        }
-                    ]
-                }
-            ],
-            max_tokens=4096
-        )
-        return response.choices[0].message.content
-
-    @staticmethod
-    async def parse_image(file_content: bytes, filename: str) -> str:
         try:
-            from google import genai
-            from google.genai import types
-            
-            api_key = os.getenv("GEMINI_API_KEY")
-            if not api_key or "your_gemini_api_key" in api_key:
-                raise ValueError("GEMINI_API_KEY is not configured or invalid.")
-                
-            client = genai.Client(api_key=api_key)
-            ext = os.path.splitext(filename)[1].lower()
-            mime_type = "image/png" if ext == ".png" else "image/jpeg"
-            
-            def _call_gemini():
-                response = client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=[
-                        types.Part.from_bytes(
-                            data=file_content,
-                            mime_type=mime_type
-                        ),
-                        "Extract all text exactly from this resume image. Maintain the layout structure as much as possible. Do not include any conversation, introductions, or formatting markdown other than the extracted text."
-                    ]
-                )
-                return response.text
-                
-            text = await asyncio.to_thread(_call_gemini)
-            return text
+            response = await client.chat.completions.create(
+                model="deepseek/deepseek-v4-flash",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "Extract all text exactly from this resume image. Maintain the layout structure as much as possible. Do not include any conversation, introductions, or formatting markdown other than the extracted text."},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:{mime_type};base64,{base64_image}"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_tokens=4096
+            )
+            return response.choices[0].message.content
         except Exception as e:
-            print(f"Gemini image parsing failed: {e}. Attempting NVIDIA vision fallback...")
-            try:
-                return await ParserService.parse_image_nvidia_fallback(file_content, filename)
-            except Exception as fallback_err:
-                print(f"NVIDIA vision fallback failed: {fallback_err}")
-                raise ValueError(f"Both Gemini and NVIDIA Vision image parsing failed. Gemini Error: {str(e)}. NVIDIA Error: {str(fallback_err)}")
+            print(f"Image parsing failed with OpenRouter: {e}")
+            raise
 
     @staticmethod
     async def extract_text(file_content: bytes, filename: str) -> str:
@@ -293,8 +213,8 @@ class ParserService:
             try:
                 return await ParserService.parse_doc_local_win32(file_content, filename)
             except Exception as e:
-                print(f"Local Word extraction failed for {filename}: {e}. Falling back to Gemini/regex parsing.")
-                return await ParserService.parse_doc_with_gemini(file_content, filename)
+                print(f"Local Word extraction failed for {filename}: {e}. Falling back to regex parsing.")
+                return ParserService.parse_doc_fallback(file_content)
         elif fn_lower.endswith(".svg"):
             return await ParserService.parse_svg(file_content, filename)
         elif fn_lower.endswith((".png", ".jpg", ".jpeg")):

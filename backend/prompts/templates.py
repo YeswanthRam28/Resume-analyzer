@@ -379,7 +379,14 @@ Goal:
 Output Format:
 Return a JSON object:
 {{
-  "tailored_resume_markdown": "The full rewritten resume in clean Markdown format",
+  "tailored_resume_json": {{
+    "contact_info": {{ "name": "...", "email": "...", "phone": "...", "location": "...", "linkedin": "...", "github": "...", "website": "..." }},
+    "summary": "...",
+    "experience": [ {{ "role": "...", "company": "...", "location": "...", "start_date": "...", "end_date": "...", "bullet_points": ["..."] }} ],
+    "education": [ {{ "institution": "...", "degree": "...", "field_of_study": "...", "start_date": "...", "end_date": "...", "gpa": "..." }} ],
+    "skills": {{ "languages": ["..."], "frameworks": ["..."], "tools": ["..."] }},
+    "projects": [ {{ "name": "...", "description": "...", "technologies": ["..."], "link": "..." }} ]
+  }},
   "changes_made": ["list of major improvements made"],
   "ats_prediction": <estimated 0-100 score for this new version>,
   "explanation": "short summary of the tailoring strategy used"

@@ -6,6 +6,7 @@ import VideoPage from './pages/VideoPage';
 import DashboardPage from './pages/DashboardPage';
 import TailorPage from './pages/TailorPage';
 import RecruiterPage from './pages/RecruiterPage';
+import RoleGuard from './components/RoleGuard';
 
 export const router = createBrowserRouter([
   {
@@ -14,15 +15,15 @@ export const router = createBrowserRouter([
   },
   {
     path: '/analyze',
-    element: <AnalyzePage />,
+    element: <RoleGuard allowedRole="candidate"><AnalyzePage /></RoleGuard>,
   },
   {
     path: '/results/:sessionId',
-    element: <ResultsPage />,
+    element: <RoleGuard allowedRole="candidate"><ResultsPage /></RoleGuard>,
   },
   {
     path: '/tailor/:sessionId',
-    element: <TailorPage />,
+    element: <RoleGuard allowedRole="candidate"><TailorPage /></RoleGuard>,
   },
   {
     path: '/video',
@@ -34,6 +35,6 @@ export const router = createBrowserRouter([
   },
   {
     path: '/recruiter',
-    element: <RecruiterPage />,
+    element: <RoleGuard allowedRole="interviewer"><RecruiterPage /></RoleGuard>,
   }
 ]);

@@ -8,6 +8,7 @@ import {
   ChevronDown, ChevronUp, ArrowLeft, Calendar, Clock, Star,
   Building2, Zap, Shield, Users
 } from 'lucide-react';
+import { UserButton } from '@clerk/react';
 import { cn } from '../lib/utils';
 import { motion as m } from 'framer-motion';
 
@@ -122,7 +123,10 @@ export default function RecruiterPage() {
   }[a.hire_recommendation] || 'default';
 
   return (
-    <div className="min-h-screen bg-brand-bg text-brand-ink">
+    <div className="min-h-screen bg-brand-bg text-brand-ink relative">
+      <div className="absolute top-6 right-6">
+        <UserButton appearance={{ elements: { avatarBox: "w-10 h-10 border border-brand-divider" } }} />
+      </div>
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-brand-divider bg-brand-bg/90 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">

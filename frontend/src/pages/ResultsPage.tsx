@@ -6,6 +6,7 @@ import {
   BarChart3, Flame, User, ShieldCheck, Map, Trophy, Github, 
   ArrowLeft, Download, ExternalLink, ChevronRight, Video, Wand2, Sparkles
 } from 'lucide-react';
+import { UserButton } from '@clerk/react';
 import { useStore } from '../lib/store';
 import { cn } from '../lib/utils';
 
@@ -71,7 +72,10 @@ export default function ResultsPage() {
   const analysis = data.analysis;
 
   return (
-    <div className="min-h-screen bg-brand-bg flex">
+    <div className="min-h-screen bg-brand-bg flex relative">
+      <div className="absolute top-6 right-6 z-50">
+        <UserButton appearance={{ elements: { avatarBox: "w-10 h-10 border border-brand-divider" } }} />
+      </div>
       {/* Sidebar */}
       <aside className="w-64 h-screen sticky top-0 border-r border-brand-divider bg-brand-bg/50 backdrop-blur-xl hidden lg:flex flex-col p-6">
         <Link to="/" className="flex items-center gap-1 mb-12">

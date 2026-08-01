@@ -6,7 +6,7 @@ import mimetypes
 
 # Base configurations
 API_URL = "http://localhost:8000/api/resume/parse"
-RESUME_FOLDER = r"d:\Projects\Rescore\Resume sample"
+RESUME_FOLDER = r"D:\Projects\Rescore\new"
 SLEEP_INTERVAL_SEC = 180  # 3 minutes
 
 def get_mime_type(file_path):

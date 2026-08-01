@@ -2,12 +2,61 @@ import os
 import sys
 import requests
 import mimetypes
-import json
-from sqlalchemy import create_engine, text
 
 # Base configurations
-API_URL = "http://127.0.0.1:8000/api/resume/parse"
-RESUME_FOLDER = r"d:\Projects\Rescore\Resume sample"
+API_URL = "http://localhost:8000/api/resume/parse"
+
+# The exact list of failed or null resumes extracted from the latest batch log
+FAILED_RESUMES = [
+    # Accounts - returned None
+    {
+        "path": r"d:\Projects\Rescore\Resume sample\Resume sample\word\Accounts\account-manager-corporate-v1.doc",
+        "inferred_role": "Accounts Professional"
+    },
+    # IT - returned None (all software-project-manager .doc files)
+    {
+        "path": r"d:\Projects\Rescore\Resume sample\Resume sample\word\IT\software-project-manager-v1.doc",
+        "inferred_role": "IT Professional"
+    },
+    {
+        "path": r"d:\Projects\Rescore\Resume sample\Resume sample\word\IT\software-project-manager-v14.doc",
+        "inferred_role": "IT Professional"
+    },
+    {
+        "path": r"d:\Projects\Rescore\Resume sample\Resume sample\word\IT\software-project-manager-v15.doc",
+        "inferred_role": "IT Professional"
+    },
+    {
+        "path": r"d:\Projects\Rescore\Resume sample\Resume sample\word\IT\software-project-manager-v5.doc",
+        "inferred_role": "IT Professional"
+    },
+    {
+        "path": r"d:\Projects\Rescore\Resume sample\Resume sample\word\IT\software-project-manager-v9.doc",
+        "inferred_role": "IT Professional"
+    },
+    # Production - returned None
+    {
+        "path": r"d:\Projects\Rescore\Resume sample\Resume sample\word\Production\bharathi.png",
+        "inferred_role": "Production Professional"
+    },
+    {
+        "path": r"d:\Projects\Rescore\Resume sample\Resume sample\word\Production\picking-packer-resume-template.doc",
+        "inferred_role": "Production Professional"
+    },
+    # Sales - returned None (new from latest batch run)
+    {
+        "path": r"d:\Projects\Rescore\Resume sample\Resume sample\word\Sales\sales-senior-level_v1.doc",
+        "inferred_role": "Sales Professional"
+    },
+    {
+        "path": r"d:\Projects\Rescore\Resume sample\Resume sample\word\Sales\Sales_Engineer.doc",
+        "inferred_role": "Sales Professional"
+    },
+    {
+        "path": r"d:\Projects\Rescore\Resume sample\Resume sample\word\Sales\warehouse-associate-resume-template.doc",
+        "inferred_role": "Sales Professional"
+    },
+]
 
 def get_mime_type(file_path):
     ext = os.path.splitext(file_path)[1].lower()
@@ -27,94 +76,18 @@ def get_mime_type(file_path):
         guess = mimetypes.guess_type(file_path)[0]
         return guess or "application/octet-stream"
 
-def get_db_connection():
-    from dotenv import load_dotenv
-    load_dotenv()
-    db_url = os.getenv("DATABASE_URL", "sqlite:///./rescore.db")
-    if not db_url or "your_neondb_url" in db_url:
-        db_url = "sqlite:///./rescore.db"
-    return create_engine(db_url)
-
-def should_process_file(engine, filename):
-    """
-    Check if the file has already been successfully parsed with a non-null candidate name.
-    """
-    query = text("""
-        SELECT r.contact_info 
-        FROM resume r
-        JOIN resume_sessions s ON s.id = r.session_id
-        WHERE s.file_name = :filename
-    """)
-    try:
-        with engine.connect() as conn:
-            result = conn.execute(query, {"filename": filename}).fetchall()
-            if not result:
-                return True # No record in database -> process
-            
-            # Check if any record has a valid non-null name
-            for row in result:
-                contact_info = row[0]
-                if contact_info:
-                    # Robust check for both Postgres (dict) and SQLite (str) json structures
-                    if isinstance(contact_info, str):
-                        try:
-                            contact_info = json.loads(contact_info)
-                        except:
-                            pass
-                    if isinstance(contact_info, dict):
-                        name = contact_info.get("name")
-                        if name and name != "None" and name != "Unknown":
-                            return False # Found a successful parse -> skip
-            return True # All found records have null/empty names -> process
-    except Exception as e:
-        print(f"Database check failed for {filename}: {e}. Defaulting to processing.")
-        return True
-
-def scan_for_resumes(root_folder, engine):
-    supported_extensions = {".pdf", ".docx", ".doc", ".svg", ".png", ".jpg", ".jpeg"}
-    resumes = []
-    
-    print(f"Scanning '{root_folder}' for failed or null resumes...")
-    
-    for dirpath, _, filenames in os.walk(root_folder):
-        folder_name = os.path.basename(dirpath)
-        inferred_role = None
-        if folder_name in ["Accounts", "IT", "Manufacture", "Production", "Sales"]:
-            inferred_role = f"{folder_name} Professional"
-            
-        for filename in filenames:
-            if filename.startswith("~$"):
-                continue
-            ext = os.path.splitext(filename)[1].lower()
-            if ext in supported_extensions:
-                if should_process_file(engine, filename):
-                    full_path = os.path.join(dirpath, filename)
-                    resumes.append({
-                        "path": full_path,
-                        "filename": filename,
-                        "inferred_role": inferred_role
-                    })
-                
-    return resumes
-
 def run_retry_parsing():
-    engine = get_db_connection()
-    resumes = scan_for_resumes(RESUME_FOLDER, engine)
-    total_files = len(resumes)
+    total_files = len(FAILED_RESUMES)
     
-    if total_files == 0:
-        print("All resumes are already successfully parsed and saved with valid candidate names!")
-        sys.exit(0)
-        
-    print(f"Found {total_files} resumes that need to be parsed (failed or returned null).")
+    print(f"Retrying parsing for the {total_files} resumes that failed or returned null in the log.")
     print("-" * 60)
     
     success_count = 0
     fail_count = 0
     
-    for index, resume in enumerate(resumes, start=1):
+    for index, resume in enumerate(FAILED_RESUMES, start=1):
         file_path = resume["path"]
-        filename = resume["filename"]
+        filename = os.path.basename(file_path)
         inferred_role = resume["inferred_role"]
         mime_type = get_mime_type(file_path)
         
@@ -122,6 +95,11 @@ def run_retry_parsing():
         print(f"  Path: {file_path}")
         if inferred_role:
             print(f"  Inferred Role: {inferred_role}")
+            
+        if not os.path.exists(file_path):
+            print(f"  [ERROR] File does not exist at path: {file_path}")
+            fail_count += 1
+            continue
             
         try:
             with open(file_path, "rb") as f:
