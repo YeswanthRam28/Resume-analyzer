@@ -113,12 +113,12 @@ def get_resume_theme_html(session_id: str, theme_name: str, version_id: str = No
         raise HTTPException(status_code=404, detail="Session not found")
         
     if version_id:
-        from models import TailoredVersion
-        version_obj = db.query(TailoredVersion).filter(TailoredVersion.id == uuid.UUID(version_id)).first()
+        from models import TailorVersion
+        version_obj = db.query(TailorVersion).filter(TailorVersion.id == uuid.UUID(version_id)).first()
         if not version_obj:
             raise HTTPException(status_code=404, detail="Tailored version not found")
         import json
-        resume_data = json.loads(version_obj.content)
+        resume_data = json.loads(version_obj.tailored_text)
     else:
         resume_obj = db.query(Resume).filter(Resume.session_id == session_obj.id).first()
         if not resume_obj:

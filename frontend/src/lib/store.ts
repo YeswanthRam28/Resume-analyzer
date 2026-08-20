@@ -16,18 +16,27 @@ interface AnalysisState {
   reset: () => void;
 }
 
+const initialRole = typeof window !== 'undefined' ? localStorage.getItem('rescore_user_role') : null;
+
 export const useStore = create<AnalysisState>((set) => ({
   sessionId: null,
   resumeText: null,
   analysis: null,
   status: {},
   videoSession: null,
-  userRole: null,
+  userRole: initialRole,
   setSession: (id) => set({ sessionId: id }),
   setResumeText: (text) => set({ resumeText: text }),
   setAnalysis: (analysis) => set({ analysis }),
   setStatus: (key, status) => set((state) => ({ status: { ...state.status, [key]: status } })),
   setVideoSession: (session) => set({ videoSession: session }),
-  setUserRole: (role) => set({ userRole: role }),
+  setUserRole: (role) => {
+    if (role) {
+      localStorage.setItem('rescore_user_role', role);
+    } else {
+      localStorage.removeItem('rescore_user_role');
+    }
+    set({ userRole: role });
+  },
   reset: () => set({ sessionId: null, resumeText: null, analysis: null, status: {}, videoSession: null }),
 }));

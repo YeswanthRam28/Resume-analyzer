@@ -108,27 +108,27 @@ export default function RoastPanel({ data, fullAnalysis, resumeText }: RoastPane
 
   return (
     <>
-      <div className="bg-[#0F0A08] p-8 rounded-xl border border-brand-divider overflow-hidden relative">
-        <div className="flex items-center justify-between mb-8">
+      <div className="bg-[#0F0A08] p-4 sm:p-8 rounded-xl border border-brand-divider overflow-hidden relative">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-brand-tertiary/20 rounded-lg">
-              <Flame className="w-6 h-6 text-brand-tertiary" />
+            <div className="p-2 bg-brand-tertiary/20 rounded-lg shrink-0">
+              <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-brand-tertiary" />
             </div>
             <div>
-              <h3 className="font-heading text-2xl text-brand-ink uppercase tracking-tighter">Roast Mode Active</h3>
+              <h3 className="font-heading text-lg sm:text-2xl text-brand-ink uppercase tracking-tight">Roast Mode Active</h3>
               <p className="text-[10px] text-brand-tertiary font-mono uppercase tracking-[0.2em]">Severity: {safeData.roast_rating}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
             <button
               onClick={() => setShowPromptModal(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-brand-primary/30 bg-brand-primary/5 text-brand-primary hover:bg-brand-primary/10 transition-all text-[11px] font-mono uppercase tracking-widest group"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-brand-primary/30 bg-brand-primary/5 text-brand-primary hover:bg-brand-primary/10 transition-all text-[10px] sm:text-[11px] font-mono uppercase tracking-wider group"
             >
-              <BrainCircuit size={14} className="group-hover:rotate-12 transition-transform" />
-              Prompt?
+              <BrainCircuit size={14} className="group-hover:rotate-12 transition-transform shrink-0" />
+              <span>Prompt?</span>
             </button>
-            <LimeButton variant="ghost" className="h-9 px-4 text-[10px]">
-              <Share2 size={12} className="mr-2" /> Share My Roast
+            <LimeButton variant="ghost" className="flex-1 sm:flex-initial h-9 px-3 text-[10px] justify-center">
+              <Share2 size={12} className="mr-1.5 shrink-0" /> Share My Roast
             </LimeButton>
           </div>
         </div>

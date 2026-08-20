@@ -5,7 +5,7 @@ import { useStore } from '../lib/store';
 
 interface RoleGuardProps {
   children: React.ReactNode;
-  allowedRole: 'candidate' | 'interviewer';
+  allowedRole?: 'candidate' | 'interviewer' | ('candidate' | 'interviewer')[];
 }
 
 export default function RoleGuard({ children, allowedRole }: RoleGuardProps) {
@@ -21,7 +21,16 @@ export default function RoleGuard({ children, allowedRole }: RoleGuardProps) {
     // If global state is still initializing, wait
     if (userRole === null) return;
 
-    if (userRole === allowedRole) {
+    if (!allowedRole) {
+      setIsChecking(false);
+      return;
+    }
+
+    const isAllowed = Array.isArray(allowedRole)
+      ? allowedRole.includes(userRole as any)
+      : userRole === allowedRole;
+
+    if (isAllowed) {
       setIsChecking(false);
     } else {
       // If role mismatch, bounce to dashboard
@@ -30,7 +39,7 @@ export default function RoleGuard({ children, allowedRole }: RoleGuardProps) {
   }, [isLoaded, isSignedIn, userRole, allowedRole, navigate]);
 
   if (isLoaded && !isSignedIn) {
-    return <RedirectToSignIn forceRedirectUrl="/dashboard" />;
+    return <RedirectToSignIn redirectUrl="/dashboard" />;
   }
 
   // Still checking (auth loading or global role fetching)

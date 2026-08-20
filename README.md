@@ -1,88 +1,83 @@
-# RÉSCORE — Intelligence Resume Platform
+# 🚀 RÉSCORE — Resume Intelligence & Candidate Screening Engine
 
-> **AI-powered resume analysis. Roasted, scored, and market-fitted in seconds.**
+> **AI-powered resume analysis, recruiter screening, and instant resume roast — optimized for modern tech candidates and Indian market hiring.**
 
-RÉSCORE is a full-stack web application that analyzes resumes using large language models. Upload your PDF or DOCX and get back a comprehensive, multi-dimensional breakdown including ATS compatibility, a brutal honest roast, personality archetype profiling, credibility screening, Indian market fitness, and project/hackathon scoring — all from a single consolidated AI call.
+RÉSCORE is a full-stack platform that analyzes resumes using state-of-the-art LLMs. Upload your PDF or DOCX to receive a multi-dimensional breakdown including ATS compatibility, a brutal honest roast, writing style archetypes, credibility screening, Indian tech market tuning, GitHub project mapping, and recruiter candidate fit assessment.
+
+📖 **[Read the Full User Guide & Blueprint (USER_GUIDE.md)](./USER_GUIDE.md)**
 
 ---
 
-## ✨ Features
+## ✨ Key Features & Capabilities
 
 | Module | Description |
 |---|---|
-| 🎯 **ATS Score Ring** | Keyword match analysis, section scoring, bullet quality rewrite suggestions |
-| 🔥 **Roast Panel** | Darkly funny, brutally honest line-by-line critique with severity ratings |
-| 🧠 **Emotion Persona Card** | Writing style archetype detection (The Ghost, The Peacock, etc.) |
-| 🛡️ **Credibility Alert** | Red flags, timeline gaps, and sus claims identified by a skeptical hiring manager AI |
-| 🇮🇳 **Indian Market Lens** | Placement readiness for Tier 1 campus, FAANG India, unicorn startups, and service companies |
-| 🏆 **Hackathon Scorer** | Project-by-project impact scoring, vague claims detection, and reframing advice |
-| 🎥 **Video IQ** | Gemini-powered video resume analysis for delivery, filler words, eye contact, and emotion |
-| 👔 **Recruiter Dashboard** | Specialized view with trait-based vocabulary, candidate overview, and professional assessment |
-| 🪄 **AI Resume Tailoring** | Side-by-side 'Original vs. Optimized' view, dynamic prompt synthesis for external AI tools |
-| 🐙 **GitHub Sync** | Deep repository analysis, contradiction checks against resume, and tech stack mapping |
-| 📊 **Dashboard** | History of all resume, recruiter, and video sessions |
+| 🎯 **ATS Score Ring** | Overall match percentage, keyword gap analysis (present vs missing), and section impact scoring |
+| 🔥 **Brutal Roast Panel** | Line-by-line critique categorized into `MILD`, `SPICY`, and `NUCLEAR` severity ratings |
+| 💡 **AI Prompt Synthesizer** | 1-click generator that compiles all resume gaps, roasts, and red flags into a pre-crafted prompt for ChatGPT / Claude / Gemini |
+| 🧠 **Writer Archetype** | Diagnoses writing style tone (*The Modest Achiever*, *The Buzzword Stacker*, etc.) with positioning advice |
+| 🛡️ **Credibility Index** | Detects timeline red flags, suspicious employment gaps, and unquantified fluff |
+| 🇮🇳 **Indian Market Lens** | Targeted placement insights for Tier-1/2 campuses, notice period formatting, and CTC positioning |
+| 🏆 **Hackathon & Project Scorer** | X-Y-Z formula evaluation (*Accomplished [X] measured by [Y] doing [Z]*) |
+| 🐙 **GitHub Sync Panel** | Analyzes linked repositories to find active, high-star projects missing from your resume |
+| 👔 **Recruiter Portal & Screening** | Match candidate resumes against job descriptions, generate tailored interview questions, and manage pipeline candidates |
+| 📱 **Mobile Navigation Drawer** | Mobile-responsive design with hamburger slide-over menu for seamless navigation across all 8 analysis sections |
+| ⚡ **Render Keep-Alive Service** | Built-in background self-ping loop calling `/health` every 10 minutes to maintain 100% server uptime on cloud hosts |
 
 ---
 
-## 🏗️ Tech Stack
+## 🏗️ Architecture & Tech Stack
 
 ### Backend (`/backend`)
 - **Framework**: FastAPI + Uvicorn
-- **Database**: SQLModel (PostgreSQL via NeonDB / SQLite fallback)
-- **AI**: NVIDIA NIM (`minimaxai/minimax-m2` via OpenAI-compatible API)
-- **Video AI**: Google Gemini 2.0 Flash
-- **Resume Parsing**: `pdfminer.six` + `mammoth`
-- **ORM**: SQLAlchemy
+- **Authentication & Roles**: Clerk OAuth with auto-role persistence and database inference
+- **Database**: SQLAlchemy + SQLModel (NeonDB PostgreSQL with connection recycling `pool_recycle=300` & SQLite fallback)
+- **AI Engine**: NVIDIA NIM / OpenRouter (`minimaxai/minimax-m2` OpenAI-compatible API)
+- **Video Intelligence**: Google Gemini 2.0 Flash
+- **Parsing**: `pdfminer.six` + `mammoth` (PDF / DOCX text extraction)
 
 ### Frontend (`/frontend`)
-- **Framework**: React + TypeScript + Vite
-- **Styling**: Vanilla CSS (custom design system)
+- **Framework**: React 18 + TypeScript + Vite
+- **Styling**: Custom Dark-mode Vanilla CSS + Tailwind Utility Classes
 - **Animations**: Framer Motion
-- **HTTP**: Axios
 - **Routing**: React Router v7
+- **Auth**: `@clerk/react`
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
-### Prerequisites
+### 1. Prerequisites
 - Python 3.11+
 - Node.js 18+
-- NVIDIA NIM API Key ([get one here](https://build.nvidia.com))
-- Google Gemini API Key ([get one here](https://aistudio.google.com/apikey))
-- NeonDB PostgreSQL URL ([get one here](https://neon.tech)) *(optional — falls back to SQLite)*
+- Clerk API Keys ([clerk.com](https://clerk.com))
+- NVIDIA NIM or OpenRouter API Key
+- NeonDB PostgreSQL URL ([neon.tech](https://neon.tech)) *(Optional — falls back to local SQLite `rescore.db`)*
 
 ---
 
-### Backend Setup
+### 2. Backend Setup
 
 ```bash
 cd backend
 
 # Create and activate virtual environment
 python -m venv venv
-venv\Scripts\activate   # Windows
-# source venv/bin/activate  # macOS/Linux
+venv\Scripts\activate      # Windows
+# source venv/bin/activate # macOS/Linux
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Configure environment
-cp .env.example .env
-# Fill in your API keys in .env
-
-# Run database migrations
-python run_migration.py
-
-# Start the server
+# Start FastAPI server
 uvicorn main:app --reload
 ```
 
-The API will be running at `http://localhost:8000`.
+Backend will run at `http://localhost:8000`.
 
 ---
 
-### Frontend Setup
+### 3. Frontend Setup
 
 ```bash
 cd frontend
@@ -90,110 +85,76 @@ cd frontend
 # Install dependencies
 npm install
 
-# Configure environment
-cp .env.example .env
-# Set VITE_API_URL=http://localhost:8000
-
-# Start dev server
+# Start Vite dev server
 npm run dev
 ```
 
-The app will be running at `http://localhost:5173`.
+Frontend will run at `http://localhost:5173`.
 
 ---
 
-## ⚙️ Environment Variables
+## ⚙️ Environment Configuration
 
 ### Backend (`backend/.env`)
-
 ```env
 NVIDIA_API_KEY=nvapi-...
 GEMINI_API_KEY=AIza...
-DATABASE_URL=postgresql://user:password@host/dbname   # Optional - falls back to SQLite
-GITHUB_TOKEN=ghp_...                                  # Optional - for GitHub repo sync
+DATABASE_URL=postgresql://user:password@host/dbname  # Optional - falls back to SQLite
+GITHUB_TOKEN=ghp_...                                 # Optional
+RENDER_EXTERNAL_URL=https://your-backend.onrender.com # For keep-alive self-pings
 ```
 
 ### Frontend (`frontend/.env`)
-
 ```env
 VITE_API_URL=http://localhost:8000
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 ```
 
 ---
 
-## 🚢 Deployment
+## 🔌 Core API Endpoints
 
-The repository is configured for easy deployment on platforms like Render or Vercel.
-
-### Render (Recommended for full-stack)
-A `render.yaml` file is included in the root directory.
-1. Connect your repository to Render.
-2. Render will automatically detect the blueprint and create both the Web Service (FastAPI) and Static Site (React Vite).
-3. Fill in your environment variables in the Render dashboard.
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/health` | Server health & keep-alive monitor |
+| `POST` | `/api/resume/analyze` | Upload candidate resume + optional JD for full analysis |
+| `GET` | `/api/resume/{session_id}` | Fetch a candidate analysis session |
+| `POST` | `/api/recruiter/analyze` | Screen candidate against JD & generate interview questions |
+| `GET` | `/api/recruiter/{session_id}` | Fetch recruiter screening report |
+| `GET` | `/api/dashboard/me` | Auto-detect and persist user role from database activity |
+| `GET` | `/api/dashboard/resumes` | Fetch user session history |
 
 ---
 
-## 📁 Project Structure
+## 📁 Repository Structure
 
 ```
 Rescore/
+├── USER_GUIDE.md           # Detailed platform blueprint & user guide
 ├── backend/
 │   ├── routes/
-│   │   ├── resume.py       # Resume upload & master AI analysis
-│   │   ├── recruiter.py    # Recruiter view & parsing
-│   │   ├── tailor.py       # Resume optimization versions
-│   │   ├── video.py        # Video analysis (Gemini)
+│   │   ├── resume.py       # Candidate resume upload & master analysis
+│   │   ├── recruiter.py    # Recruiter candidate screening & questions
+│   │   ├── dashboard.py   # User roles & session history
+│   │   ├── tailor.py       # Multi-role resume versioning
 │   │   └── history.py      # Session history
-│   ├── services/
-│   │   ├── nvidia_service.py   # NVIDIA NIM LLM client
-│   │   ├── gemini_service.py   # Google Gemini video client
-│   │   ├── github_service.py   # GitHub API integration
-│   │   └── parser_service.py   # PDF/DOCX text extractor
-│   ├── prompts/
-│   │   └── templates.py    # All AI prompts
-│   ├── models.py           # SQLModel database models
-│   ├── database.py         # DB engine, session, SQLite fallback
-│   ├── main.py             # FastAPI app entry point
-│   ├── run_migration.py    # DB migration script
-│   └── requirements.txt
+│   ├── database.py         # DB connection pooling & SQLite fallback
+│   ├── models.py           # SQLModel database schemas
+│   └── main.py             # FastAPI entry point & /health self-ping loop
 └── frontend/
     ├── src/
     │   ├── components/
-    │   │   ├── results/    # Score Rings, RoastPanel, Sync Panel, etc.
-    │   │   ├── upload/     # ResumeUploader, VideoRecorder
-    │   │   └── ui/         # Buttons, Inputs, Progress Bars
-    │   ├── pages/          # Analyze, Results, Dashboard, Video, Tailor, Recruiter
-    │   ├── lib/            # Zustand store, utils
-    │   └── router.tsx
+    │   │   ├── results/    # RoastPanel, ATSScoreRing, GitHubSync, etc.
+    │   │   ├── ui/         # Buttons, Drawers, Modals
+    │   │   └── RoleGuard.tsx
+    │   ├── pages/          # AnalyzePage, ResultsPage, DashboardPage, RecruiterPage
+    │   ├── router.tsx
+    │   └── App.tsx         # Landing page hero & PC showcase
     └── vite.config.ts
 ```
 
 ---
 
-## 🔌 API Reference
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/resume/analyze` | Upload resume + optional JD, returns full analysis |
-| `GET` | `/api/resume/{session_id}` | Fetch a specific resume session |
-| `POST` | `/api/recruiter/analyze` | Upload resume, returns recruiter assessment |
-| `GET` | `/api/recruiter/{session_id}` | Fetch a specific recruiter session |
-| `POST` | `/api/tailor/save` | Save a tailored resume version |
-| `GET` | `/api/tailor/{session_id}` | Fetch tailored versions for a session |
-| `POST` | `/api/video/analyze` | Upload video, returns video IQ analysis |
-| `GET` | `/api/video/{session_id}` | Fetch a specific video session |
-| `GET` | `/api/history/history` | Get recent resume and video sessions |
----
-
-## 🧠 Architecture Decisions
-
-- **Single Master Prompt**: All resume analysis (ATS, Roast, Emotion, Credibility, Indian Market, Projects) is done in a single LLM call using `MASTER_RESUME_PROMPT`. This reduces API latency from ~30s to ~10-15s.
-- **Session Lifecycle Management**: The DB connection is closed before the AI call to prevent cloud SSL idle-timeout errors, and a fresh session is opened afterward to commit results.
-- **Defensive Array Rendering**: All frontend components use `Array.isArray()` guards to prevent `.map()` crashes when the AI returns malformed data types.
-- **SQLite Fallback**: If NeonDB is unreachable (DNS failure, network issue), the app automatically falls back to a local `rescore.db` SQLite database.
-
----
-
 ## 📄 License
 
-MIT
+MIT © 2026 RÉSCORE. Built with obsession in Chennai.

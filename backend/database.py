@@ -10,7 +10,18 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./rescore.db")
 if not DATABASE_URL or "your_neondb_url" in DATABASE_URL:
     DATABASE_URL = "sqlite:///./rescore.db"
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+engine_kwargs = {
+    "pool_pre_ping": True,
+}
+
+if "postgresql" in DATABASE_URL:
+    engine_kwargs.update({
+        "pool_recycle": 300,
+        "pool_size": 10,
+        "max_overflow": 20,
+    })
+
+engine = create_engine(DATABASE_URL, **engine_kwargs)
 
 def init_db():
     global engine
@@ -18,12 +29,23 @@ def init_db():
         SQLModel.metadata.create_all(engine)
     except Exception as e:
         print(f"Database initialization failed: {e}")
-        # Optionally fallback to local sqlite if Neon fails
         if "sqlite" not in str(engine.url):
             print("Falling back to local SQLite for this session...")
             engine = create_engine("sqlite:///./rescore.db")
             SQLModel.metadata.create_all(engine)
 
 def get_session():
-    with Session(engine) as session:
-        yield session
+    global engine
+    try:
+        with Session(engine) as session:
+            yield session
+    except Exception as e:
+        print(f"DB Session error ({e}). Attempting connection recovery...")
+        if "sqlite" not in str(engine.url):
+            print("PostgreSQL connection failed. Falling back to local SQLite...")
+            engine = create_engine("sqlite:///./rescore.db")
+            SQLModel.metadata.create_all(engine)
+            with Session(engine) as fallback_session:
+                yield fallback_session
+        else:
+            raise e

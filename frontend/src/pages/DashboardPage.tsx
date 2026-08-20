@@ -73,7 +73,7 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <Link to={role === 'candidate' ? "/analyze" : "/recruiter"}>
+            <Link to="/analyze">
               <LimeButton className="h-12 px-8">
                 {role === 'candidate' ? 'New Analysis +' : 'Screen Candidate +'}
               </LimeButton>

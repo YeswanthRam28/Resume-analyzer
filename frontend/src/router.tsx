@@ -15,7 +15,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/analyze',
-    element: <RoleGuard allowedRole="candidate"><AnalyzePage /></RoleGuard>,
+    element: <RoleGuard allowedRole={['candidate', 'interviewer']}><AnalyzePage /></RoleGuard>,
   },
   {
     path: '/results/:sessionId',
@@ -35,6 +35,10 @@ export const router = createBrowserRouter([
   },
   {
     path: '/recruiter',
+    element: <RoleGuard allowedRole="interviewer"><RecruiterPage /></RoleGuard>,
+  },
+  {
+    path: '/recruiter/:sessionId',
     element: <RoleGuard allowedRole="interviewer"><RecruiterPage /></RoleGuard>,
   }
 ]);

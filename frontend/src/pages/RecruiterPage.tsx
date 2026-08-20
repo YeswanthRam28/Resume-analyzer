@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
+import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Briefcase, User, Mail, Phone, MapPin, Linkedin, Github, Globe,
@@ -11,6 +12,8 @@ import {
 import { UserButton } from '@clerk/react';
 import { cn } from '../lib/utils';
 import { motion as m } from 'framer-motion';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 function ScoreRing({ score, label, color = 'cyan' }: { score: number; label: string; color?: string }) {
   const radius = 40;
@@ -96,14 +99,49 @@ function Section({ title, icon: Icon, children, defaultOpen = true }: {
 export default function RecruiterPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const data = location.state?.data;
+  const { sessionId } = useParams<{ sessionId: string }>();
+
+  const [data, setData] = useState<any>(location.state?.data || null);
+  const [loading, setLoading] = useState<boolean>(!location.state?.data && !!sessionId);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (data || !sessionId) return;
+
+    const fetchSession = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await axios.get(`${API_URL}/api/recruiter/${sessionId}`);
+        setData(response.data);
+      } catch (err: any) {
+        console.error("Failed to fetch recruiter session", err);
+        setError("Recruiter report not found.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSession();
+  }, [sessionId, data]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-brand-bg flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-brand-secondary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-brand-bg flex flex-col items-center justify-center gap-6">
-        <p className="text-brand-muted font-mono">No recruiter report found.</p>
-        <button onClick={() => navigate('/analyze')} className="text-brand-secondary font-mono text-sm underline">
-          Run a new analysis
+      <div className="min-h-screen bg-brand-bg flex flex-col items-center justify-center gap-6 p-6 text-center">
+        <p className="text-brand-muted font-mono text-lg">{error || "No recruiter report found."}</p>
+        <button 
+          onClick={() => navigate('/analyze')} 
+          className="px-6 py-3 bg-brand-secondary text-brand-bg font-mono font-medium text-xs uppercase tracking-widest rounded-lg hover:shadow-[0_0_20px_rgba(0,220,255,0.4)] transition-all"
+        >
+          Screen a Candidate →
         </button>
       </div>
     );
@@ -131,7 +169,7 @@ export default function RecruiterPage() {
       <header className="sticky top-0 z-50 border-b border-brand-divider bg-brand-bg/90 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/analyze')} className="p-2 hover:bg-brand-card rounded-lg transition-colors text-brand-muted hover:text-brand-ink">
+            <button onClick={() => navigate('/dashboard')} className="p-2 hover:bg-brand-card rounded-lg transition-colors text-brand-muted hover:text-brand-ink">
               <ArrowLeft size={18} />
             </button>
             <div className="h-5 w-px bg-brand-divider" />

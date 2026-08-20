@@ -55,9 +55,14 @@ export default function AnalyzePage() {
         const response = await axios.post(`${API_URL}/api/recruiter/analyze`, formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        const session_id = response.data.session_id;
         setLoadingLines(prev => [...prev, "Report complete. Redirecting..."]);
         setTimeout(() => {
-          navigate('/recruiter', { state: { data: response.data } });
+          if (session_id) {
+            navigate(`/recruiter/${session_id}`, { state: { data: response.data } });
+          } else {
+            navigate('/recruiter', { state: { data: response.data } });
+          }
         }, 800);
       } catch (error) {
         console.error("Recruiter analysis failed", error);

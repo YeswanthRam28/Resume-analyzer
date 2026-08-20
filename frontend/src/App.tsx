@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, useScroll, useTransform, AnimatePresence, useSpring, useInView } from 'motion/react';
+import { motion, useScroll, useTransform, AnimatePresence, useInView } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { 
   ArrowRight, 
@@ -15,11 +15,6 @@ import {
   Search,
   Zap,
   BarChart3,
-  MessageSquareWarning,
-  Star,
-  ChevronDown,
-  Plus,
-  X,
   LayoutDashboard
 } from 'lucide-react';
 import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/react';
@@ -86,7 +81,7 @@ const LoadingScreen = ({ onComplete }: { onComplete: () => void }) => {
 
 const Navbar = () => {
   return (
-    <nav className="fixed top-0 left-0 right-0 h-[60px] z-50 bg-brand-bg/80 backdrop-blur-xl border-b border-brand-divider flex items-center justify-between px-6 md:px-12">
+    <nav className="fixed top-0 left-0 right-0 h-[60px] z-50 bg-brand-bg/80 backdrop-blur-xl border-b border-brand-divider flex items-center justify-between px-4 sm:px-8 md:px-12">
       <div className="flex items-center gap-1 group cursor-pointer">
         <span className="font-display text-2xl text-brand-primary">R/</span>
         <span className="font-display text-xl text-brand-ink">ÉSCORE</span>
@@ -101,25 +96,25 @@ const Navbar = () => {
         ))}
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         <Show when="signed-out">
           <SignInButton mode="modal" forceRedirectUrl="/dashboard">
             <button className="font-sans text-xs text-brand-muted hover:text-white transition-colors">Sign In</button>
           </SignInButton>
           <SignUpButton mode="modal" forceRedirectUrl="/dashboard">
-            <button className="h-9 px-5 bg-brand-primary text-brand-bg font-sans font-medium text-xs flex items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(198,255,74,0.3)]">
+            <button className="h-9 px-4 sm:px-5 bg-brand-primary text-brand-bg font-sans font-medium text-xs flex items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(198,255,74,0.3)]">
               Get Started
             </button>
           </SignUpButton>
         </Show>
         <Show when="signed-in">
           <Link to="/dashboard">
-            <button className="flex items-center gap-2 font-sans text-xs text-brand-primary hover:text-brand-bg hover:bg-brand-primary border border-brand-primary h-9 px-4 transition-all duration-200">
-              <LayoutDashboard size={14} /> Dashboard
+            <button className="flex items-center gap-2 font-sans text-xs text-brand-primary hover:text-brand-bg hover:bg-brand-primary border border-brand-primary h-9 px-3 sm:px-4 transition-all duration-200">
+              <LayoutDashboard size={14} /> <span className="hidden sm:inline">Dashboard</span>
             </button>
           </Link>
-          <div className="ml-2 flex items-center">
-            <UserButton appearance={{ elements: { avatarBox: "w-9 h-9 border border-brand-divider" } }} />
+          <div className="ml-1 sm:ml-2 flex items-center">
+            <UserButton appearance={{ elements: { avatarBox: "w-8 h-8 sm:w-9 sm:h-9 border border-brand-divider" } }} />
           </div>
         </Show>
       </div>
@@ -139,48 +134,46 @@ const Hero = () => {
 
   return (
     <section 
-      className="relative min-h-screen pt-[60px] overflow-hidden flex items-center justify-center px-6 md:px-20"
+      className="relative min-h-screen pt-[80px] pb-12 overflow-hidden flex items-center justify-center px-4 sm:px-8 md:px-20"
       onMouseMove={handleMouseMove}
     >
       {/* Mesh Gradients */}
       <div 
-        className="absolute top-0 left-0 w-[400px] h-[400px] bg-brand-primary/10 rounded-full blur-[100px] pointer-events-none"
+        className="absolute top-0 left-0 w-[300px] sm:w-[400px] h-[300px] sm:h-[400px] bg-brand-primary/10 rounded-full blur-[80px] sm:blur-[100px] pointer-events-none"
         style={{ transform: `translate(${mousePos.x}px, ${mousePos.y}px)` }}
       />
       <div 
-        className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-brand-secondary/5 rounded-full blur-[120px] pointer-events-none"
+        className="absolute bottom-0 right-0 w-[350px] sm:w-[500px] h-[350px] sm:h-[500px] bg-brand-secondary/5 rounded-full blur-[90px] sm:blur-[120px] pointer-events-none"
         style={{ transform: `translate(${-mousePos.x}px, ${-mousePos.y}px)` }}
       />
 
       {/* Dot Grid */}
-      <div className="absolute inset-0 bg-[radial-gradient(#1E2535_1px,transparent_1px)] [background-size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black_70%,transparent_100%)] opacity-30 pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(#1E2535_1px,transparent_1px)] [background-size:30px_30px] sm:[background-size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black_70%,transparent_100%)] opacity-30 pointer-events-none" />
 
-      <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-2 items-center gap-20">
+      <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-2 items-center gap-12 lg:gap-20 relative z-10">
         <div>
           <div className="space-y-0 relative">
-            <div className="w-full h-px bg-brand-divider absolute top-[110px] left-0 pointer-events-none" />
-            
             <motion.h1 
-              initial={{ y: 40, opacity: 0 }}
+              initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="font-display text-[70px] md:text-[110px] leading-[0.9] text-brand-ghost tracking-tight"
+              transition={{ delay: 0.1, duration: 0.6 }}
+              className="font-display text-[44px] sm:text-[70px] lg:text-[110px] leading-[0.95] text-brand-ghost tracking-tight"
             >
               YOUR RESUME IS
             </motion.h1>
             <motion.h1 
-              initial={{ y: 40, opacity: 0 }}
+              initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.25, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="font-display text-[70px] md:text-[110px] leading-[0.9] text-brand-ink tracking-tight"
+              transition={{ delay: 0.25, duration: 0.6 }}
+              className="font-display text-[44px] sm:text-[70px] lg:text-[110px] leading-[0.95] text-brand-ink tracking-tight"
             >
               LYING TO YOU.
             </motion.h1>
             <motion.h1 
-              initial={{ y: 40, opacity: 0 }}
+              initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="font-display text-[70px] md:text-[110px] leading-[0.9] text-brand-primary tracking-widest"
+              transition={{ delay: 0.4, duration: 0.6 }}
+              className="font-display text-[44px] sm:text-[70px] lg:text-[110px] leading-[0.95] text-brand-primary tracking-widest"
             >
               WE FIX THAT.
             </motion.h1>
@@ -190,7 +183,7 @@ const Hero = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.8 }}
-            className="mt-8 max-w-[480px] font-sans text-brand-muted text-base md:text-lg leading-relaxed"
+            className="mt-6 sm:mt-8 max-w-[480px] font-sans text-brand-muted text-sm sm:text-base md:text-lg leading-relaxed"
           >
             AI-powered resume intelligence. ATS scoring, brutal feedback, and a roast mode that actually helps. Built for builders, not buzzwords.
           </motion.p>
@@ -199,37 +192,39 @@ const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8, duration: 0.6 }}
-            className="mt-10 flex flex-wrap gap-4"
+            className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4"
           >
-            <Link to="/analyze">
-              <button className="group relative h-12 px-8 bg-brand-primary text-brand-bg font-sans font-medium text-sm flex items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-[0_0_24px_rgba(198,255,74,0.3)]">
+            <Link to="/analyze" className="w-full sm:w-auto">
+              <button className="w-full sm:w-auto h-12 px-8 bg-brand-primary text-brand-bg font-sans font-medium text-sm flex items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-[0_0_24px_rgba(198,255,74,0.3)]">
                 Analyze Now
               </button>
             </Link>
-            <button className="h-12 px-8 border border-brand-ghost text-white font-sans text-sm flex items-center justify-center hover:border-brand-secondary hover:text-brand-secondary transition-all">
-              See a Sample Roast
-            </button>
+            <Link to="/analyze" className="w-full sm:w-auto">
+              <button className="w-full sm:w-auto h-12 px-8 border border-brand-ghost text-white font-sans text-sm flex items-center justify-center hover:border-brand-secondary hover:text-brand-secondary transition-all">
+                See a Sample Roast
+              </button>
+            </Link>
           </motion.div>
 
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1, duration: 0.8 }}
-            className="mt-6 flex items-center gap-4 font-sans text-xs text-brand-muted"
+            className="mt-6 flex flex-wrap items-center gap-3 sm:gap-4 font-sans text-xs text-brand-muted"
           >
             <span className="flex items-center gap-1.5"><span className="text-brand-primary">⬢</span> 4,200+ resumes analyzed</span>
             <span className="flex items-center gap-1.5"><span className="text-brand-primary">⬢</span> Built in India</span>
-            <span className="flex items-center gap-1.5"><span className="text-brand-primary">⬢</span> Professional tier insights</span>
+            <span className="flex items-center gap-1.5"><span className="text-brand-primary">⬢</span> Professional tier</span>
           </motion.div>
         </div>
 
         {/* Hero Right Side - Resume Card Mockup */}
-        <div className="relative flex justify-center lg:justify-end">
+        <div className="relative justify-center lg:justify-end hidden sm:flex">
           <motion.div 
             initial={{ rotate: -10, opacity: 0, x: 50 }}
             animate={{ rotate: -3, opacity: 1, x: 0 }}
             transition={{ delay: 0.5, duration: 1, ease: "easeOut" }}
-            className="relative w-full max-w-[400px] h-[500px] bg-brand-card border border-brand-divider p-8 rounded-xl shadow-[0_40px_80px_rgba(0,0,0,0.6)]"
+            className="relative w-full max-w-[360px] sm:max-w-[400px] h-[420px] sm:h-[500px] bg-brand-card border border-brand-divider p-6 sm:p-8 rounded-xl shadow-[0_40px_80px_rgba(0,0,0,0.6)]"
           >
             <div className="space-y-6">
               <div className="w-1/3 h-4 bg-brand-divider rounded" />
@@ -251,31 +246,8 @@ const Hero = () => {
             >
               67 / 100 →
             </motion.div>
-            
-            {/* Connector Line Mockup */}
-            <svg className="absolute -left-12 top-20 w-12 h-20 overflow-visible pointer-events-none opacity-30 hidden md:block">
-              <path 
-                d="M 50,0 Q 0,40 50,100" 
-                fill="none" 
-                stroke="#C6FF4A" 
-                strokeWidth="1" 
-                strokeDasharray="4 4"
-              />
-            </svg>
           </motion.div>
         </div>
-      </div>
-
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
-        <div className="w-px h-10 bg-brand-ghost relative overflow-hidden group-hover:bg-brand-primary transition-colors">
-          <motion.div 
-            animate={{ top: ['-20%', '120%'] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-            className="absolute top-0 left-0 w-full h-[20%] bg-brand-primary"
-          />
-        </div>
-        <span className="font-sans text-[11px] text-brand-ghost uppercase tracking-[0.2em]">scroll</span>
       </div>
     </section>
   );
@@ -372,17 +344,17 @@ const FeatureShowcase = () => {
     offset: ["start start", "end end"]
   });
 
-  const x = useTransform(scrollYProgress, [0, 1], ["0%", "-80%"]);
+  const x = useTransform(scrollYProgress, [0, 1], ["0%", "-75%"]);
   const progressBarWidth = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
 
   return (
-    <div ref={containerRef} className="h-[500vh] relative bg-brand-bg" id="features">
+    <div ref={containerRef} className="h-[400vh] relative bg-brand-bg overflow-clip" id="features">
       <div className="sticky top-0 h-screen overflow-hidden flex items-center">
         <div className="absolute top-0 left-0 w-full z-20">
           <motion.div style={{ width: progressBarWidth }} className="h-0.5 bg-brand-primary" />
         </div>
 
-        <motion.div style={{ x }} className="flex w-[500vw]">
+        <motion.div style={{ x }} className="flex w-[400vw]">
           {/* Panel 1 - ATS Scoring */}
           <div className="w-screen h-screen shrink-0 flex items-center px-6 md:px-20 gap-20">
             <div className="flex-1 flex justify-center">
@@ -433,7 +405,7 @@ const FeatureShowcase = () => {
           </div>
 
           {/* Panel 2 - Roast Mode */}
-          <div className="w-screen h-screen shrink-0 bg-[#0F0A08] flex items-center px-6 md:px-20 gap-20">
+          <div className="w-screen h-screen shrink-0 bg-[#0F0A08] flex items-center px-6 md:px-20 gap-20" id="roast-mode">
             <div className="flex-1 relative">
               <div className="bg-brand-card border border-brand-divider p-8 rounded-xl opacity-60">
                 <div className="space-y-4">
@@ -643,27 +615,19 @@ const UseCases = () => {
 
 const Footer = () => {
   return (
-    <footer className="py-20 bg-brand-bg px-6 border-t border-brand-divider">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-10">
-          <div className="flex items-center gap-1">
-            <span className="font-display text-2xl text-brand-primary">R/</span>
-            <span className="font-display text-xl text-brand-ink">ÉSCORE</span>
-          </div>
-          
-          <div className="flex items-center gap-8 font-sans text-xs text-brand-muted">
-            <a href="#" className="hover:text-brand-primary transition-colors">Privacy</a>
-            <a href="#" className="hover:text-brand-primary transition-colors">Terms</a>
-            <a href="#" className="hover:text-brand-primary transition-colors">Contact</a>
-          </div>
-
-          <div className="font-sans text-[11px] text-brand-muted text-center md:text-right">
-            Built with obsession in <span className="text-brand-primary">Chennai</span>.<br />
-            © 2026 RÉSCORE. All rights reserved.
-          </div>
+    <footer className="py-12 bg-brand-bg px-6 border-t border-brand-divider">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="flex items-center gap-1">
+          <span className="font-display text-2xl text-brand-primary">R/</span>
+          <span className="font-display text-xl text-brand-ink">ÉSCORE</span>
         </div>
         
-        <div className="mt-12 flex justify-center gap-6">
+        <div className="font-sans text-[11px] text-brand-muted text-center">
+          Built with obsession in <span className="text-brand-primary">Chennai</span>.<br />
+          © 2026 RÉSCORE. All rights reserved.
+        </div>
+
+        <div className="flex items-center gap-6">
           <Github className="w-5 h-5 text-brand-muted hover:text-brand-primary cursor-pointer transition-colors" />
           <Twitter className="w-5 h-5 text-brand-muted hover:text-brand-primary cursor-pointer transition-colors" />
           <Linkedin className="w-5 h-5 text-brand-muted hover:text-brand-primary cursor-pointer transition-colors" />
@@ -709,7 +673,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-brand-bg text-brand-ink selection:bg-brand-primary selection:text-brand-bg grain-overlay relative">
+    <div className="min-h-screen bg-brand-bg text-brand-ink selection:bg-brand-primary selection:text-brand-bg grain-overlay relative overflow-x-clip">
       <AnimatePresence>
         {loading && <LoadingScreen onComplete={() => setLoading(false)} />}
       </AnimatePresence>
@@ -718,36 +682,42 @@ export default function App() {
         <>
           <Navbar />
           <Hero />
-          <Marquee />
-          <ProblemSection />
-          <FeatureShowcase />
-          <HowItWorks />
-          <MaskReveal />
-          <UseCases />
-          
-          {/* Roast CTA - Extra Section */}
-          <section className="py-32 bg-[#0F0A08] relative overflow-hidden px-6">
-            <div className="relative z-10 text-center flex flex-col items-center">
-              <motion.h2 
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                className="font-display text-7xl md:text-[110px] text-brand-tertiary leading-none mb-6"
-              >
-                READY TO GET ROASTED?
-              </motion.h2>
-              <p className="font-sans text-lg text-white max-w-lg mb-10">Upload your resume. We'll tell you everything wrong with it. Instantly.</p>
-              <motion.button 
-                whileHover={{ x: [0, -3, 3, -3, 3, 0] }}
-                className="h-14 w-52 bg-brand-tertiary text-black font-sans font-bold uppercase tracking-wider shadow-[0_0_40px_rgba(255,107,53,0.3)] transition-all"
-              >
-                Upload & Roast
-              </motion.button>
-              <p className="mt-6 font-sans italic text-brand-muted text-xs">No judgment. Just data. And maybe a little judgment.</p>
-            </div>
+
+          {/* Desktop / PC View Showcase Sections - Hidden on Mobile (< md) */}
+          <div className="hidden md:block">
+            <Marquee />
+            <ProblemSection />
+            <FeatureShowcase />
+            <HowItWorks />
+            <MaskReveal />
+            <UseCases />
             
-            {/* Background Flame Decoration */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand-tertiary opacity-5 rounded-full blur-[120px] pointer-events-none" />
-          </section>
+            {/* Roast CTA Section */}
+            <section className="py-32 bg-[#0F0A08] relative overflow-hidden px-6">
+              <div className="relative z-10 text-center flex flex-col items-center">
+                <motion.h2 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  className="font-display text-7xl md:text-[110px] text-brand-tertiary leading-none mb-6"
+                >
+                  READY TO GET ROASTED?
+                </motion.h2>
+                <p className="font-sans text-lg text-white max-w-lg mb-10">Upload your resume. We'll tell you everything wrong with it. Instantly.</p>
+                <Link to="/analyze">
+                  <motion.button 
+                    whileHover={{ x: [0, -3, 3, -3, 3, 0] }}
+                    className="h-14 w-52 bg-brand-tertiary text-black font-sans font-bold uppercase tracking-wider shadow-[0_0_40px_rgba(255,107,53,0.3)] transition-all"
+                  >
+                    Upload & Roast
+                  </motion.button>
+                </Link>
+                <p className="mt-6 font-sans italic text-brand-muted text-xs">No judgment. Just data. And maybe a little judgment.</p>
+              </div>
+              
+              {/* Background Flame Decoration */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand-tertiary opacity-5 rounded-full blur-[120px] pointer-events-none" />
+            </section>
+          </div>
 
           <Footer />
         </>
@@ -767,6 +737,3 @@ export default function App() {
     </div>
   );
 }
-
-
-
