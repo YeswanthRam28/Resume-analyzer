@@ -4,7 +4,7 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BarChart3, Flame, User, ShieldCheck, Map, Trophy, Github, 
-  ArrowLeft, Download, ExternalLink, ChevronRight, Video, Wand2, Sparkles,
+  ArrowLeft, Download, ExternalLink, ChevronRight, Wand2, Sparkles,
   Menu, X, LayoutDashboard
 } from 'lucide-react';
 import { UserButton } from '@clerk/react';
@@ -19,7 +19,6 @@ import CredibilityAlert from '../components/results/CredibilityAlert';
 import IndianMarketLens from '../components/results/IndianMarketLens';
 import HackathonScorer from '../components/results/HackathonScorer';
 import GitHubSyncPanel from '../components/results/GitHubSyncPanel';
-import VideoAnalysisResult from '../components/results/VideoAnalysisResult';
 import ProgressBar from '../components/ui/ProgressBar';
 import LimeButton from '../components/ui/LimeButton';
 
@@ -175,13 +174,8 @@ export default function ResultsPage() {
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-brand-divider space-y-3">
-                <Link to="/video" onClick={() => setMobileNavOpen(false)}>
-                  <LimeButton variant="ghost" className="w-full text-xs h-10 justify-center">
-                    <Video size={14} className="mr-2" /> Video Analysis
-                  </LimeButton>
-                </Link>
-                <div className="flex gap-2 pt-2">
+              <div className="pt-6 border-t border-brand-divider">
+                <div className="flex gap-2">
                   <Link to="/analyze" className="flex-1" onClick={() => setMobileNavOpen(false)}>
                     <button className="w-full py-2 bg-brand-card border border-brand-divider text-xs font-mono text-brand-ink rounded text-center">New</button>
                   </Link>
@@ -236,14 +230,6 @@ export default function ResultsPage() {
             </Link>
           </div>
         </nav>
-
-        <div className="mt-auto pt-6 border-t border-brand-divider">
-          <Link to="/video">
-            <LimeButton variant="ghost" className="w-full text-[10px] h-10">
-              <Video size={14} className="mr-2" /> Video Analysis
-            </LimeButton>
-          </Link>
-        </div>
       </aside>
 
       {/* Main Content */}
@@ -343,14 +329,6 @@ export default function ResultsPage() {
             github_strength_summary: "No GitHub data linked."
           }} />
         </section>
-
-        {/* Video Section */}
-        {data.video_analysis && (
-          <section id="video" className="scroll-mt-24">
-            <h2 className="font-display text-3xl sm:text-5xl mb-8 sm:mb-12 text-brand-secondary">VIDEO INTELLIGENCE</h2>
-            <VideoAnalysisResult data={data.video_analysis} />
-          </section>
-        )}
 
         <footer className="pt-24 border-t border-brand-divider text-center text-brand-muted font-sans text-sm">
           <p>Analysis powered by RÉSCORE Engine v1.0. Results based on GLM-4 Intelligence.</p>

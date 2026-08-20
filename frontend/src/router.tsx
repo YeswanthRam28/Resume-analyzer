@@ -2,7 +2,6 @@ import { createBrowserRouter } from 'react-router-dom';
 import App from './App';
 import AnalyzePage from './pages/AnalyzePage';
 import ResultsPage from './pages/ResultsPage';
-import VideoPage from './pages/VideoPage';
 import DashboardPage from './pages/DashboardPage';
 import TailorPage from './pages/TailorPage';
 import RecruiterPage from './pages/RecruiterPage';
@@ -24,10 +23,6 @@ export const router = createBrowserRouter([
   {
     path: '/tailor/:sessionId',
     element: <RoleGuard allowedRole="candidate"><TailorPage /></RoleGuard>,
-  },
-  {
-    path: '/video',
-    element: <VideoPage />,
   },
   {
     path: '/dashboard',
